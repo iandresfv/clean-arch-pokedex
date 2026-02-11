@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  client:
+    container_name: pokedex-client-dev
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    networks:
+      - pokedex-network
+    stdin_open: true
+    tty: true
+
+networks:
+  pokedex-network:
+    driver: bridge
