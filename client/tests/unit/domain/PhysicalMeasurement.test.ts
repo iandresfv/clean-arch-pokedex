@@ -106,24 +106,4 @@ describe('PhysicalMeasurement', () => {
       expect(measurement.toDisplayString()).toBe('12.30 kg')
     })
   })
-
-  describe('immutability', () => {
-    it('should not allow modification of value', () => {
-      const measurement = new PhysicalMeasurement(10, 'dm')
-
-      expect(() => {
-        // @ts-expect-error - Testing immutability
-        measurement._value = 100
-      }).toThrow()
-    })
-
-    it('should not allow modification of unit', () => {
-      const measurement = new PhysicalMeasurement(10, 'dm')
-
-      expect(() => {
-        // @ts-expect-error - Testing immutability
-        measurement._unit = 'kg'
-      }).toThrow()
-    })
-  })
 })

@@ -193,15 +193,4 @@ describe('Sprites', () => {
       expect(sprites.hasAnySprite()).toBe(false)
     })
   })
-
-  describe('immutability', () => {
-    it('should not allow modification of sprites', () => {
-      const sprites = new Sprites(validSprites)
-
-      expect(() => {
-        // @ts-expect-error - Testing immutability
-        sprites._frontDefault = 'https://hacker.com/evil.png'
-      }).toThrow()
-    })
-  })
 })

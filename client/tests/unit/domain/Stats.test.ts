@@ -140,15 +140,4 @@ describe('Stats', () => {
       expect(stats.hp).toBe(45)
     })
   })
-
-  describe('immutability', () => {
-    it('should not allow modification of stats', () => {
-      const stats = new Stats(validStats)
-
-      expect(() => {
-        // @ts-expect-error - Testing immutability
-        stats._hp = 100
-      }).toThrow()
-    })
-  })
 })

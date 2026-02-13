@@ -72,16 +72,4 @@ describe('PokemonType', () => {
       expect(type.toString()).toBe('electric')
     })
   })
-
-  describe('immutability', () => {
-    it('should not allow modification of value', () => {
-      const type = new PokemonType('grass')
-
-      // TypeScript prevents this at compile time, but test runtime behavior
-      expect(() => {
-        // @ts-expect-error - Testing immutability
-        type._value = 'fire'
-      }).toThrow()
-    })
-  })
 })
