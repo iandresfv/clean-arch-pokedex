@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { Sprites } from '@/domain/pokemon'
+import { describe, expect,it } from 'vitest'
+
 import { InvalidSpriteUrlError } from '@/domain/errors'
+import { Sprites } from '@/domain/pokemon'
 
 describe('Sprites', () => {
   const validSprites = {

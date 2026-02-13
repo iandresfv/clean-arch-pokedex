@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { Stats } from '@/domain/pokemon'
+import { describe, expect,it } from 'vitest'
+
 import { InvalidStatsError } from '@/domain/errors'
+import { Stats } from '@/domain/pokemon'
 
 describe('Stats', () => {
   const validStats = {

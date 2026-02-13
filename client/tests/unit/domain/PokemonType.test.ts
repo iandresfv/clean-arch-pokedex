@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { PokemonType, VALID_POKEMON_TYPES } from '@/domain/pokemon'
+import { describe, expect,it } from 'vitest'
+
 import { InvalidPokemonTypeError } from '@/domain/errors'
+import { PokemonType, VALID_POKEMON_TYPES } from '@/domain/pokemon'
 
 describe('PokemonType', () => {
   describe('constructor', () => {

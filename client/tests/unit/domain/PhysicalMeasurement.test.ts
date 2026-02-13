@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { PhysicalMeasurement } from '@/domain/pokemon'
+import { describe, expect,it } from 'vitest'
+
 import { InvalidPhysicalMeasurementError } from '@/domain/errors'
+import { PhysicalMeasurement } from '@/domain/pokemon'
 
 describe('PhysicalMeasurement', () => {
   describe('constructor', () => {
