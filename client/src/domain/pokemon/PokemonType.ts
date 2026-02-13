@@ -33,7 +33,7 @@ export class PokemonType {
       throw new InvalidPokemonTypeError(value)
     }
 
-    this._value = normalizedValue as PokemonTypeName
+    this._value = normalizedValue
   }
 
   private isValidType(value: string): value is PokemonTypeName {

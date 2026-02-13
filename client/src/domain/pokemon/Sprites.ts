@@ -75,10 +75,10 @@ export class Sprites {
 
   hasAnySprite(): boolean {
     return !!(
-      this._frontDefault ||
-      this._frontShiny ||
-      this._backDefault ||
-      this._backShiny ||
+      this._frontDefault ??
+      this._frontShiny ??
+      this._backDefault ??
+      this._backShiny ??
       this._officialArtwork
     )
   }

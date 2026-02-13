@@ -35,11 +35,11 @@ export class Stats {
 
   private validateStat(name: string, value: number): void {
     if (!Number.isInteger(value)) {
-      throw new InvalidStatsError(`${name} must be an integer, got ${value}`)
+      throw new InvalidStatsError(`${name} must be an integer, got ${String(value)}`)
     }
 
     if (value < 0) {
-      throw new InvalidStatsError(`${name} cannot be negative, got ${value}`)
+      throw new InvalidStatsError(`${name} cannot be negative, got ${String(value)}`)
     }
   }
 

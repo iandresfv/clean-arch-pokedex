@@ -56,10 +56,6 @@ export class PhysicalMeasurement {
       return `${this.toMeters().toFixed(2)} m`
     }
 
-    if (this._unit === 'hg' || this._unit === 'kg') {
-      return `${this.toKilograms().toFixed(2)} kg`
-    }
-
-    return `${this._value} ${this._unit}`
+    return `${this.toKilograms().toFixed(2)} kg`
   }
 }
