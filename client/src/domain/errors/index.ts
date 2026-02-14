@@ -1,7 +1,7 @@
-export { DomainError } from './DomainError'
+export { DomainError } from './DomainError';
 export {
   InvalidPhysicalMeasurementError,
   InvalidPokemonTypeError,
   InvalidSpriteUrlError,
   InvalidStatsError,
-} from './pokemon.errors'
+} from './pokemon.errors';
