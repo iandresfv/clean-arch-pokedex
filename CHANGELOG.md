@@ -8,10 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Domain layer: Pokemon, Type, and Ability entities
-- Application layer: Use cases and DTOs
+- Application layer: Use cases, ports, and DTOs
 - Infrastructure layer: PokeAPI repository with caching
 - Presentation layer: Pokemon list, detail, and search pages
+
+---
+
+## [0.2.0] - 2026-02-14
+
+### Added
+- Pokemon entity with factory method and invariant enforcement
+- Species entity with generation validation (1-9)
+- PokemonType value object with 18 valid types
+- Stats value object with non-negative integer validation
+- PhysicalMeasurement value object with unit conversion (dm→m, hg→kg)
+- Sprites value object with quality selection logic
+- TypeEffectivenessService with full 18x18 damage multiplier chart
+- DomainError hierarchy with specific error classes
+- Vitest configuration with path aliases and test scripts
+- Husky + lint-staged pre-commit hooks for code quality
+- 100% unit test coverage for entire domain layer (114 tests)
 
 ---
 
@@ -42,5 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit conventions (Conventional Commits)
 - CHANGELOG maintenance guide
 
-[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/iandresfv/clean-arch-pokedex/releases/tag/v0.1.0
