@@ -1,0 +1,1 @@
+export { PokeAPIRepository } from './PokeAPIRepository';
