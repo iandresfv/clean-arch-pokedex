@@ -8,15 +8,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Application layer: Use cases, ports, and DTOs
-- Infrastructure layer: PokeAPI repository with caching
+
 - Presentation layer: Pokemon list, detail, and search pages
+- Search functionality with debounce
+- Favorites feature with localStorage persistence
+- E2E tests with Playwright
+
+---
+
+## [0.3.0] - 2026-02-14
+
+### Added
+
+- PokemonRepository, CacheService, and Logger outbound ports (interfaces)
+- ListPokemonUseCase with pagination support
+- GetPokemonByIdUseCase with graceful species fetch failure handling
+- SearchPokemonUseCase with term normalization (trim + lowercase)
+- PokeAPIRepository implementing PokemonRepository port
+- PokemonMapper standalone functions for API-to-domain transformation
+- LocalStorageCacheService with TTL-based expiry and prefix-scoped keys
+- ConsoleLogger implementing Logger port
+- DI container with composition root and React context provider
+- useDI hook for accessing container in components
+- ApplicationError hierarchy (PokemonNotFoundError, RepositoryError)
+- PokemonListItemDTO, PokemonDetailDTO, and SpeciesDTO
+- SearchCriteria and PaginationParams/PaginatedResult types
+- 154 total tests passing (90%+ application, 80%+ infrastructure coverage)
 
 ---
 
 ## [0.2.0] - 2026-02-14
 
 ### Added
+
 - Pokemon entity with factory method and invariant enforcement
 - Species entity with generation validation (1-9)
 - PokemonType value object with 18 valid types
@@ -34,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-02-08
 
 ### Added
+
 - Complete project setup with Clean Architecture (Hexagonal Architecture)
 - Professional tooling configuration (ESLint 9 + Prettier 3)
 - Docker Compose development environment with HMR
@@ -43,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Monorepo structure prepared for future Golang API
 
 ### Infrastructure
+
 - Vite 7 + React 19 + TypeScript 5.9 stack
 - ESLint strict type checking with custom import sorting
 - Prettier with 100-character line width (industry standard)
@@ -52,12 +78,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VSCode/Cursor settings for optimal DX
 
 ### Documentation
+
 - Clean Architecture guidelines and principles
 - Pedagogical approach for learning and understanding
 - Git Flow strategy with real-world examples
 - Commit conventions (Conventional Commits)
 - CHANGELOG maintenance guide
 
-[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/iandresfv/clean-arch-pokedex/releases/tag/v0.1.0
