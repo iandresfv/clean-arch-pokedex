@@ -26,3 +26,15 @@ export class InvalidSpriteUrlError extends DomainError {
     super(`Invalid sprite URL: "${url}"`, 'INVALID_SPRITE_URL');
   }
 }
+
+export class InvalidPokemonEntityError extends DomainError {
+  constructor(message: string) {
+    super(message, 'INVALID_POKEMON_ENTITY');
+  }
+}
+
+export class InvalidSpeciesError extends DomainError {
+  constructor(message: string) {
+    super(message, 'INVALID_SPECIES');
+  }
+}
