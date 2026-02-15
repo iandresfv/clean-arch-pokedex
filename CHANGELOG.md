@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
+---
 
-- E2E tests with Playwright
-- Final polish (code splitting, meta tags, README)
+## [1.0.0] - 2026-02-14
+
+### Added
+
+- Playwright E2E test suite with 17 tests (list, detail, favorites, navigation)
+- Playwright configuration with Chromium and auto web server
+- test:e2e and test:e2e:ui npm scripts
+- Custom Pokéball SVG favicon replacing Vite default
+- HTML meta description and theme-color tags
+- React.lazy code splitting for PokemonDetailPage
+
+### Changed
+
+- Vitest excludes E2E test directory to prevent conflicts
 
 ---
 
@@ -142,7 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit conventions (Conventional Commits)
 - CHANGELOG maintenance guide
 
-[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...v0.3.0
