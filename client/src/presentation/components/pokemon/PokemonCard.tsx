@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 
+import { FavoriteButton } from './FavoriteButton';
 import { TypeBadge } from './TypeBadge';
 
 import type { PokemonListItemDTO } from '@/application/dto';
@@ -26,6 +27,7 @@ export function PokemonCard({ pokemon }: PokemonCardProps) {
               ?
             </div>
           )}
+          <FavoriteButton pokemonId={pokemon.id} className="absolute left-1 top-1" />
           <span className="absolute right-2 top-2 text-xs font-mono text-muted-foreground">
             #{pokemon.id.toString().padStart(3, '0')}
           </span>

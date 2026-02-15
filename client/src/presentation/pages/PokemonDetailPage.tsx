@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
+import { FavoriteButton } from '@/presentation/components/pokemon/FavoriteButton';
 import { PokemonDetailHeader } from '@/presentation/components/pokemon/PokemonDetailHeader';
 import { PokemonDetailSkeleton } from '@/presentation/components/pokemon/PokemonDetailSkeleton';
 import { PokemonSprites } from '@/presentation/components/pokemon/PokemonSprites';
@@ -17,10 +18,13 @@ export function PokemonDetailPage() {
 
   return (
     <div className="space-y-8">
-      <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to list
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to list
+        </Link>
+        {pokemon && <FavoriteButton pokemonId={pokemonId} />}
+      </div>
 
       {isLoading && <PokemonDetailSkeleton />}
 
