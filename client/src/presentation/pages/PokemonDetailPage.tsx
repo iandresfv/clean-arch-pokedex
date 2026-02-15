@@ -17,7 +17,7 @@ export function PokemonDetailPage() {
   const { data: pokemon, isLoading, isError, refetch } = usePokemonDetail(pokemonId);
 
   return (
-    <div className="space-y-8">
+    <div className="animate-fade-in space-y-8">
       <div className="flex items-center justify-between">
         <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
           <ArrowLeft className="mr-2 h-4 w-4" />
