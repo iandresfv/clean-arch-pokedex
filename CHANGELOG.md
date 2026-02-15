@@ -9,10 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Search functionality with debounce
-- Favorites feature with localStorage persistence
-- UI polish and responsive design improvements
 - E2E tests with Playwright
+- Final polish (code splitting, meta tags, README)
+
+---
+
+## [0.5.0] - 2026-02-14
+
+### Added
+
+- Search functionality with debounced input and instant results
+- SearchBar component with clear button and keyboard support
+- useSearchPokemon hook with TanStack Query integration
+- useDebounce generic hook for input delay
+- Favorites feature with Zustand store and localStorage persistence
+- FavoriteButton component with heart toggle animation
+- Favorites counter badge in header navigation
+- ErrorBoundary component with retry functionality
+- ScrollToTop component for route change scroll restoration
+- Footer with PokéAPI attribution
+- Fade-in page transitions via CSS animations
+- Enhanced EmptyState with SearchX icon and custom icon prop
+- Enhanced NotFoundPage with CSS Pokéball illustration
+- 192 total tests passing across 21 test files
+
+### Changed
+
+- AppLayout now includes ErrorBoundary, ScrollToTop, and Footer
+- List and detail pages use fade-in animation on mount
 
 ---
 
@@ -118,7 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit conventions (Conventional Commits)
 - CHANGELOG maintenance guide
 
-[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.1.0...v0.2.0
