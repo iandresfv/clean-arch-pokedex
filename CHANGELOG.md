@@ -9,10 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Presentation layer: Pokemon list, detail, and search pages
 - Search functionality with debounce
 - Favorites feature with localStorage persistence
+- UI polish and responsive design improvements
 - E2E tests with Playwright
+
+---
+
+## [0.4.0] - 2026-02-14
+
+### Added
+
+- Shadcn/ui initialization with Button, Card, Badge, Skeleton components
+- App layout with sticky header and main content area
+- React Router configuration with `/`, `/pokemon/:id`, and 404 routes
+- TanStack Query provider with DI context integration
+- Pokemon List page with responsive card grid and pagination
+- Pokemon Detail page with stats chart, sprites, and species info
+- TypeBadge component with Pokemon type color mapping
+- PokemonCard and PokemonCardSkeleton components
+- StatsChart component for base stats visualization with color-coded bars
+- PokemonSprites component with sprite gallery
+- PokemonDetailHeader with official artwork and metadata
+- SpeciesInfo component with flavor text, generation, and habitat
+- usePokemonList and usePokemonDetail custom hooks (TanStack Query)
+- Pagination component with page controls
+- ErrorState component with retry functionality
+- cn() utility for TailwindCSS class merging
+- 176 total tests passing (70%+ presentation layer coverage)
+
+### Changed
+
+- Replaced Game Boy Advance loading screen with functional app shell
+- Updated main.tsx with provider hierarchy (Query + DI + Router)
+
+### Removed
+
+- App.tsx and App.css (replaced by router-based architecture)
 
 ---
 
@@ -85,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commit conventions (Conventional Commits)
 - CHANGELOG maintenance guide
 
-[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/iandresfv/clean-arch-pokedex/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/iandresfv/clean-arch-pokedex/releases/tag/v0.1.0
