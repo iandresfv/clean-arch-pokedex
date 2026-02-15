@@ -25,7 +25,7 @@ export function PokemonListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Pokédex</h1>
         <p className="text-muted-foreground">Browse and discover Pokemon from all generations.</p>
