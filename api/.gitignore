@@ -1,0 +1,10 @@
+# Build output
+bin/
+server
+*.exe
+
+# Environment
+.env
+
+# Air temp
+tmp/
