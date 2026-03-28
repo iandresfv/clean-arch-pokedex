@@ -57,7 +57,7 @@ Thumbs.db
 .temp/
 .tmp/
 
-# Personal workspace settings (Cursor IDE)
+# AI assistant config files
 .cursorrules
 .cursor/
 .windsurf/

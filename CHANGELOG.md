@@ -132,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Professional tooling configuration (ESLint 9 + Prettier 3)
 - Docker Compose development environment with HMR
 - Pokédex retro loading screen (Game Boy Advance style)
-- Comprehensive documentation (README, .cursorrules, Git workflow)
+- Comprehensive documentation (README, CLAUDE.md, Git workflow)
 - TailwindCSS 4 + Shadcn/ui component library setup
 - Monorepo structure prepared for future Golang API
 
@@ -144,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EditorConfig for cross-editor consistency
 - Docker multi-stage build ready for production
 - Hot Module Replacement (HMR) working in Docker
-- VSCode/Cursor settings for optimal DX
+- VSCode settings for optimal DX
 
 ### Documentation
 

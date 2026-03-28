@@ -44,7 +44,7 @@ Production-ready Pokédex application built with **Clean Architecture** (Hexagon
 
 ## 🛠️ Tech Stack
 
-### Frontend
+### Frontend (`client/`)
 - **React 19.2** - UI library
 - **Vite 7** - Build tool (fast HMR)
 - **TypeScript 5.9** - Type safety
@@ -55,15 +55,25 @@ Production-ready Pokédex application built with **Clean Architecture** (Hexagon
 - **React Hook Form + Zod** - Forms & validation
 - **React Router 7** - Client-side routing
 
+### Backend (`api/`) — In Progress
+- **Go 1.25** - Language
+- **stdlib `net/http`** - HTTP server (no framework)
+- **PostgreSQL** - Database
+- **sqlc** - Type-safe SQL-to-Go code generation
+- **golang-migrate** - Database migrations
+- **`log/slog`** - Structured logging (stdlib)
+
 ### Testing
-- **Vitest** - Unit & integration tests
+- **Vitest** - Unit & integration tests (frontend)
 - **React Testing Library** - Component tests
 - **Playwright** - End-to-end tests
+- **Go `testing`** - Table-driven tests (backend)
 
 ### Development Tools
 - **Docker + Docker Compose** - Containerization
 - **pnpm** - Fast, efficient package manager
-- **ESLint + Prettier** - Code quality
+- **ESLint + Prettier** - Code quality (frontend)
+- **golangci-lint** - Multi-linter aggregator (backend)
 - **TypeScript ESLint (Strict)** - Type-safe linting
 
 ## 🚀 Quick Start
@@ -129,7 +139,7 @@ Application will be available at `http://localhost:5173`
 
 ```
 clean-arch-pokedex/
-├── client/                     # Frontend application
+├── client/                     # Frontend application (React + TypeScript)
 │   ├── src/
 │   │   ├── domain/            # Business logic (zero dependencies)
 │   │   ├── application/       # Use cases & ports
@@ -137,8 +147,84 @@ clean-arch-pokedex/
 │   │   ├── presentation/      # React UI
 │   │   └── di/                # Dependency injection
 │   └── tests/                 # Test suites
-└── api/                       # Backend (future - Golang)
+├── api/                       # Backend API (Go 1.25)
+│   ├── cmd/server/            # Entry point
+│   ├── internal/              # Application code
+│   │   ├── handler/           # HTTP handlers
+│   │   ├── service/           # Business logic
+│   │   ├── repository/        # Data access (sqlc + PostgreSQL)
+│   │   ├── model/             # Domain types
+│   │   └── middleware/        # CORS, logging, auth
+│   └── migrations/            # Database migrations
+├── docs/                      # Architecture documentation
+└── CLAUDE.md                  # AI assistant engineering standards
 ```
+
+## 🤖 AI-Assisted Development
+
+This project uses a structured **AI-assisted development methodology** with different approaches per component:
+
+| Component | AI Role | Approach |
+|-----------|---------|----------|
+| **`client/`** (Frontend) | 100% AI-assisted | Architecture and standards defined by the engineer; implementation executed by AI |
+| **`api/`** (Backend) | Hybrid | Engineer writes core business logic; AI assists with configuration, scaffolding, and boilerplate |
+
+Both approaches are guided by the same [`CLAUDE.md`](./CLAUDE.md) engineering standards — ensuring consistent quality regardless of who writes the code.
+
+### The Approach
+
+The frontend was developed through collaboration with AI coding assistants (Claude Code), guided by a comprehensive [`CLAUDE.md`](./CLAUDE.md) file that defines:
+
+- **Architectural constraints**: Clean Architecture layer boundaries, dependency direction enforcement
+- **Code quality standards**: SOLID principles, self-documenting code, minimal comments policy
+- **Documentation mandate**: Every library usage verified against official docs for the exact version in `package.json`
+- **Technology conventions**: File naming, import ordering, error handling patterns, testing standards
+- **Forbidden practices**: Direct API calls in components, `any` types, domain-infrastructure coupling
+
+### Why This Matters
+
+AI-assisted development is not "vibe coding." The quality of the output is directly proportional to the quality of the engineering context provided. This project demonstrates that:
+
+1. **Architecture must be defined by the engineer** — The hexagonal architecture, layer boundaries, dependency rules, and DDD patterns were design decisions made before any code was written. AI executed the vision; it didn't invent it.
+
+2. **AI rules files are engineering artifacts** — The `CLAUDE.md` file is not a prompt template. It's a technical specification that encodes years of software engineering experience: Clean Architecture principles, SOLID, Clean Code philosophy, and modern frontend best practices.
+
+3. **Documentation-first approach prevents hallucinations** — By mandating official documentation verification for every library (with version-specific notes for TanStack Query v5, React Router v7, TailwindCSS v4), the AI consistently produces correct, up-to-date implementations instead of guessing from outdated training data.
+
+4. **The result speaks for itself** — 192+ unit tests, 17 E2E tests, strict TypeScript, proper domain modeling with Value Objects and Entities, graceful error degradation, multi-layer caching strategy — all following consistent patterns across the entire codebase.
+
+### What the Engineer Defined
+
+- Hexagonal Architecture as the frontend foundation
+- Layered Architecture (handler → service → repository) for the Go backend
+- Domain model: Entities (Pokemon, Species), Value Objects (PokemonType, Stats, PhysicalMeasurement, Sprites), Domain Services (TypeEffectivenessService)
+- Ports & Adapters pattern for infrastructure isolation
+- Manual dependency injection strategy using React Context
+- Data fetching strategy (N+1 with Promise.all parallelization + multi-layer cache)
+- Testing pyramid and coverage targets per layer
+- Git Flow workflow with Conventional Commits
+- Backend tech stack decisions: Go 1.25 stdlib, PostgreSQL, sqlc
+
+### What AI Executed (Frontend)
+
+- Code implementation following the defined architecture and conventions
+- Test writing following the established patterns (AAA, type-safe mocks)
+- API mapper implementation (PokeAPI response → domain entities)
+- Component development following Shadcn/ui patterns
+- Documentation generation based on actual source code analysis
+
+### What AI Assists With (Backend)
+
+- Project scaffolding and boilerplate (Docker, Makefile, config loading)
+- Code review and idiomatic Go suggestions
+- Test scaffolding and table-driven test structure
+- Documentation and architectural reference materials
+
+> **For engineering leaders**: This approach mirrors how a tech lead or architect works with a development team — defining the "what" and "why" while delegating the "how" to capable implementers. The `CLAUDE.md` file is essentially an architectural decision record (ADR) that also serves as a living style guide.
+
+### Project Documentation
+
+- [**Architecture Reference**](./docs/ARCHITECTURE.md) — Comprehensive walkthrough of every architectural layer with code examples, SOLID principles applied, data fetching strategy, and testing approach
 
 ## 🧪 Testing Strategy
 
