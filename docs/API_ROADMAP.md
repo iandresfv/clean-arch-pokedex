@@ -601,3 +601,40 @@ Only what's strictly necessary:
 Everything else is pure stdlib: `net/http`, `database/sql`, `encoding/json`, `log/slog`, `context`, `os/signal`, `fmt`, `errors`, `strconv`, `strings`, `time`, `sync`, `crypto/rand`.
 
 **No web frameworks. No ORM. No DI containers. No config libraries.**
+
+---
+
+## Progress Tracking
+
+| # | Stage | Phase | Status |
+|---|-------|-------|--------|
+| 1 | Project structure and Go module | Phase 1 — Foundation | ✅ Done |
+| 2 | Configuration management | Phase 1 — Foundation | ⏳ Pending |
+| 3 | HTTP server with graceful shutdown and health endpoint | Phase 1 — Foundation | ⏳ Pending |
+| 4 | Makefile for dev workflow | Phase 1 — Foundation | ⏳ Pending |
+| 5 | Docker Compose with PostgreSQL | Phase 2 — Database | ⏳ Pending |
+| 6 | Database migrations — Pokemon schema | Phase 2 — Database | ⏳ Pending |
+| 7 | sqlc configuration and queries | Phase 2 — Database | ⏳ Pending |
+| 8 | Repository layer — interface and PostgreSQL implementation | Phase 2 — Database | ⏳ Pending |
+| 9 | Domain models and error definitions | Phase 3 — Core API | ⏳ Pending |
+| 10 | Service layer — business logic | Phase 3 — Core API | ⏳ Pending |
+| 11 | Response helpers and handler layer | Phase 3 — Core API | ⏳ Pending |
+| 12 | Router — route registration | Phase 3 — Core API | ⏳ Pending |
+| 13 | Logging middleware with slog | Phase 4 — Middleware | ⏳ Pending |
+| 14 | Recovery and request ID middleware | Phase 4 — Middleware | ⏳ Pending |
+| 15 | CORS middleware | Phase 4 — Middleware | ⏳ Pending |
+| 16 | Middleware chain and server wiring | Phase 4 — Middleware | ⏳ Pending |
+| 17 | PokeAPI seeder — populate database from external API | Phase 5 — Data Seeding | ⏳ Pending |
+| 18 | Types seeding and effectiveness data | Phase 5 — Data Seeding | ⏳ Pending |
+| 19 | Service layer unit tests | Phase 6 — Testing | ⏳ Pending |
+| 20 | Handler layer tests | Phase 6 — Testing | ⏳ Pending |
+| 21 | Repository integration tests | Phase 6 — Testing | ⏳ Pending |
+| 22 | Dockerfile — multi-stage production build | Phase 7 — Docker & DX | ⏳ Pending |
+| 23 | Development Dockerfile with Air hot reload | Phase 7 — Docker & DX | ⏳ Pending |
+| 24 | Full Docker Compose stack | Phase 7 — Docker & DX | ⏳ Pending |
+| 25 | Security headers middleware | Phase 8 — Hardening | ⏳ Pending |
+| 26 | Rate limiting middleware | Phase 8 — Hardening | ⏳ Pending |
+| 27 | Pagination helpers and query parameter validation | Phase 8 — Hardening | ⏳ Pending |
+| 28 | TLS termination and HTTP/2 support | Phase 8 — Hardening | ⏳ Pending |
+| 29 | OpenAPI 3.1 specification | Phase 9 — API Documentation | ⏳ Pending |
+| 30 | Swagger UI endpoint | Phase 9 — API Documentation | ⏳ Pending |
