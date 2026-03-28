@@ -68,7 +68,7 @@
   // File associations
   "files.associations": {
     "*.css": "tailwindcss",
-    ".cursorrules": "markdown"
+    "CLAUDE.md": "markdown"
   },
 
   // Tailwind CSS IntelliSense
