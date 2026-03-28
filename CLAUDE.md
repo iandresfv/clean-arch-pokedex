@@ -68,6 +68,10 @@ Layered: `HTTP Request → Router → Middleware → Handler → Service → Rep
 - Interfaces defined where used (in `service` package, not `repository`)
 - Table-driven tests, context as first parameter, explicit error handling
 
+## Collaboration Mode (Backend)
+
+The Go API is developed hands-on by the engineer. Claude provides guidance, teaching, and explanations but does NOT write code unless explicitly asked. Discuss the "why" behind architectural decisions (graceful shutdown, middleware ordering, TLS, etc.) rather than providing ready-made implementations.
+
 ## Testing
 
 Vitest (unit + integration) with jsdom environment. E2E tests (Playwright) are excluded from Vitest runner.
