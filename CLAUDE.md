@@ -2,13 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Communication
-
-Spanish preferred for conversation, English for code and code comments.
-
 ## Project Overview
 
 Monorepo with two components:
+
 - **`client/`** — Frontend (React 19 + TypeScript 5.9), Hexagonal/Clean Architecture
 - **`api/`** — Backend (Go 1.25), Layered Architecture (in progress)
 
