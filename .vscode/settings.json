@@ -8,7 +8,7 @@
 
   // Editor
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": null,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.rulers": [100],
