@@ -609,7 +609,7 @@ Everything else is pure stdlib: `net/http`, `database/sql`, `encoding/json`, `lo
 | # | Stage | Phase | Status |
 |---|-------|-------|--------|
 | 1 | Project structure and Go module | Phase 1 — Foundation | ✅ Done |
-| 2 | Configuration management | Phase 1 — Foundation | ⏳ Pending |
+| 2 | Configuration management | Phase 1 — Foundation | ✅ Done |
 | 3 | HTTP server with graceful shutdown and health endpoint | Phase 1 — Foundation | ⏳ Pending |
 | 4 | Makefile for dev workflow | Phase 1 — Foundation | ⏳ Pending |
 | 5 | Docker Compose with PostgreSQL | Phase 2 — Database | ⏳ Pending |

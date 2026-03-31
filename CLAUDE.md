@@ -70,7 +70,7 @@ Layered: `HTTP Request → Router → Middleware → Handler → Service → Rep
 
 ## Collaboration Mode (Backend)
 
-The Go API is developed hands-on by the engineer. Claude provides guidance, teaching, and explanations but does NOT write code unless explicitly asked. Discuss the "why" behind architectural decisions (graceful shutdown, middleware ordering, TLS, etc.) rather than providing ready-made implementations.
+Hybrid collaboration: implementation is split between engineer and Claude depending on the stage. All code follows senior-level quality standards. Each stage is committed atomically, merged to develop via Git Flow, and tracked in the roadmap progress table.
 
 ## Testing
 
