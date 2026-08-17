@@ -22,6 +22,9 @@ import (
 func Recovery() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// nolint:contextcheck // The recovery path deliberately takes no
+			// context parameter: it runs while unwinding a panicking goroutine
+			// and only reads the request's own context through reqctx.
 			defer func() {
 				rec := recover()
 				if rec == nil {
