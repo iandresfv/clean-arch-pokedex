@@ -1,0 +1,18 @@
+# Build artefacts
+bin/
+tmp/
+*.exe
+coverage.out
+coverage.html
+
+# Environment
+.env
+.env.local
+
+# Deployment manifests are not needed inside the image
+deploy/
+
+# Version control and editor state
+.git/
+.gitignore
+.golangci.yml
