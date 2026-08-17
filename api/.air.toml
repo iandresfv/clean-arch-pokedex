@@ -1,1 +1,23 @@
-# Air hot reload configuration — configured in Stage 23
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -o ./tmp/server ./cmd/server/"
+  bin = "./tmp/server"
+  include_ext = ["go", "sql"]
+  exclude_dir = ["tmp", "bin", "deploy", "sqlc"]
+  exclude_regex = ["_test\\.go"]
+  # Editors write files in bursts; without a delay Air starts a build for each
+  # intermediate write and races itself.
+  delay = 300
+  stop_on_error = true
+  send_interrupt = true
+  # Long enough for the server's graceful shutdown to finish, so a reload
+  # exercises the same path a real deployment does.
+  kill_delay = "2s"
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

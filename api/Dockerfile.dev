@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+
+# Development image: Air rebuilds and restarts the binary when a .go file
+# changes. Go is compiled, so without a watcher every edit means stopping and
+# re-running the server by hand.
+FROM golang:1.26-alpine
+
+WORKDIR /app
+
+RUN go install github.com/air-verse/air@latest
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+# The source is bind-mounted by Compose, so nothing else is copied: the image
+# stays valid across edits and only rebuilds when dependencies change.
+
+EXPOSE 8080
+
+ENV SERVER_HOST=0.0.0.0 \
+    SERVER_PORT=8080 \
+    APP_ENV=development \
+    LOG_FORMAT=text \
+    LOG_LEVEL=debug
+
+CMD ["air", "-c", ".air.toml"]

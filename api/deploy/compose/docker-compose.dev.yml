@@ -1,5 +1,11 @@
 name: pokedex-dev
 
+# Development stack: source is bind-mounted and Air rebuilds on save.
+#
+# This, not Kubernetes, is the day-to-day loop. It starts in seconds and needs
+# no manifests. The Kubernetes stack under deploy/k8s exists for the concerns
+# that only appear there: probes, rollouts, resource limits and replicas.
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -25,7 +31,57 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    networks: [pokedex-dev]
+
+  migrate:
+    image: migrate/migrate:v4.19.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../../migrations:/migrations:ro
+    command:
+      - '-path=/migrations'
+      - '-database=postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-pokedex}?sslmode=disable'
+      - 'up'
+    restart: on-failure
+    networks: [pokedex-dev]
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: development
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-pokedex}
+      LOG_LEVEL: debug
+      LOG_FORMAT: text
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - '${SERVER_PORT:-8080}:8080'
+    volumes:
+      - ../..:/app
+      # Anonymous volumes keep container-only build artefacts out of the host
+      # tree, where they would confuse the local toolchain.
+      - /app/tmp
+      - /app/bin
+    networks: [pokedex-dev]
 
 volumes:
   postgres_data:
     name: pokedex_postgres_data_dev
+
+networks:
+  pokedex-dev:
+    name: pokedex-dev
+    driver: bridge

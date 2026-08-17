@@ -4,12 +4,14 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/config"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/handler"
@@ -32,9 +34,28 @@ func main() {
 }
 
 func run() error {
+	healthCheck := flag.Bool("health", false,
+		"probe this server's own /health endpoint and exit 0 when healthy")
+	showVersion := flag.Bool("version", false, "print the build version and exit")
+	flag.Parse()
+
+	// Answered before the configuration is read: reporting the build version
+	// must work on an image that has not been given its environment yet, which
+	// is exactly the situation when someone is diagnosing a bad deployment.
+	if *showVersion {
+		fmt.Println(version)
+		return nil
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		return err
+	}
+	// The runtime image is distroless: no shell, no curl, nothing to script a
+	// health check with. Letting the binary probe itself gives Docker a usable
+	// HEALTHCHECK without reintroducing a shell into the image.
+	if *healthCheck {
+		return probeHealth(cfg.Server.Addr())
 	}
 
 	logger := newLogger(cfg)
@@ -160,6 +181,28 @@ func serve(ctx context.Context, srv *http.Server, cfg *config.Config, logger *sl
 	}
 
 	logger.Info("server stopped")
+	return nil
+}
+
+// probeHealth performs a single request against the local /health endpoint.
+func probeHealth(addr string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+addr+"/health", nil)
+	if err != nil {
+		return fmt.Errorf("building health request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("health probe failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("health probe returned status %d", resp.StatusCode)
+	}
 	return nil
 }
 
