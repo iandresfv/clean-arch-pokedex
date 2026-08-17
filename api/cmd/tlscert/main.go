@@ -91,12 +91,12 @@ func run() error {
 		return fmt.Errorf("creating certificate: %w", err)
 	}
 
-	if err := os.MkdirAll(*outDir, 0o755); err != nil {
+	if err = os.MkdirAll(*outDir, 0o750); err != nil {
 		return fmt.Errorf("creating output directory: %w", err)
 	}
 
 	certPath := filepath.Join(*outDir, "cert.pem")
-	if err := writePEM(certPath, "CERTIFICATE", der, 0o644); err != nil {
+	if err = writePEM(certPath, "CERTIFICATE", der, 0o644); err != nil {
 		return err
 	}
 
@@ -107,7 +107,7 @@ func run() error {
 
 	keyPath := filepath.Join(*outDir, "key.pem")
 	// 0600: a private key readable by other users on the machine is not private.
-	if err := writePEM(keyPath, "EC PRIVATE KEY", keyDER, 0o600); err != nil {
+	if err = writePEM(keyPath, "EC PRIVATE KEY", keyDER, 0o600); err != nil {
 		return err
 	}
 
@@ -121,6 +121,8 @@ func run() error {
 }
 
 func writePEM(path, blockType string, der []byte, perm os.FileMode) error {
+	// nolint:gosec // G304: the path comes from a command-line flag chosen by
+	// the operator running the tool, not from any request or network input.
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return fmt.Errorf("creating %s: %w", path, err)
