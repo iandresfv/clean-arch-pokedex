@@ -147,7 +147,7 @@ clean-arch-pokedex/
 │   │   ├── presentation/      # React UI
 │   │   └── di/                # Dependency injection
 │   └── tests/                 # Test suites
-├── api/                       # Backend API (Go 1.25)
+├── api/                       # Backend API (Go 1.26)
 │   ├── cmd/server/            # Entry point
 │   ├── internal/              # Application code
 │   │   ├── handler/           # HTTP handlers
@@ -156,7 +156,6 @@ clean-arch-pokedex/
 │   │   ├── model/             # Domain types
 │   │   └── middleware/        # CORS, logging, auth
 │   └── migrations/            # Database migrations
-├── docs/                      # Architecture documentation
 └── CLAUDE.md                  # AI assistant engineering standards
 ```
 
@@ -221,10 +220,6 @@ AI-assisted development is not "vibe coding." The quality of the output is direc
 - Documentation and architectural reference materials
 
 > **For engineering leaders**: This approach mirrors how a tech lead or architect works with a development team — defining the "what" and "why" while delegating the "how" to capable implementers. The `CLAUDE.md` file is essentially an architectural decision record (ADR) that also serves as a living style guide.
-
-### Project Documentation
-
-- [**Architecture Reference**](./docs/ARCHITECTURE.md) — Comprehensive walkthrough of every architectural layer with code examples, SOLID principles applied, data fetching strategy, and testing approach
 
 ## 🧪 Testing Strategy
 

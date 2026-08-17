@@ -36,6 +36,19 @@ Run a single test file: `cd client && pnpm vitest run tests/unit/domain/Pokemon.
 
 Pre-commit hook (Husky) runs `lint-staged` automatically on `.ts`, `.tsx`, `.json`, `.md`, `.css` files.
 
+Backend commands run from `api/` (Go 1.26, module `github.com/iandresfv/clean-arch-pokedex/api`):
+
+```bash
+cd api
+make run              # go run ./cmd/server/ (listens on SERVER_HOST:SERVER_PORT, default localhost:8080)
+make build            # go build -o bin/server ./cmd/server/
+go test ./...         # Run all Go tests
+go test -race ./internal/service/...        # Single package with race detector
+go test -run TestName ./internal/service/   # Single test by name
+```
+
+The Makefile currently defines only `run` and `build`; the fuller command set (test, lint, migrate, sqlc, docker) in the roadmap is planned, not yet wired.
+
 ## Architecture (Frontend)
 
 Hexagonal Architecture with strict inward dependency rule:
@@ -64,9 +77,13 @@ Presentation → Application → Domain ← Infrastructure
 
 Layered: `HTTP Request → Router → Middleware → Handler → Service → Repository → PostgreSQL`
 
-- stdlib `net/http` with Go 1.25 ServeMux, `log/slog` for logging, `sqlc` for type-safe SQL
+- stdlib `net/http` with method-aware ServeMux patterns (Go 1.22+), `log/slog` for logging, `sqlc` for type-safe SQL, PostgreSQL 18 via `pgx/v5`
 - Interfaces defined where used (in `service` package, not `repository`)
 - Table-driven tests, context as first parameter, explicit error handling
+- Config is struct-based from env vars (`internal/config`) — no web framework, ORM, DI container, or config library. Permitted runtime deps: `pgx/v5`, `golang-migrate`, `go-redis` (Phase 12), and `x/crypto` + `golang-jwt` only if the optional auth phase is built
+- **`.dev-notes/docs/API_ROADMAP.md` is the source of truth for the backend** (kept outside version control — `.dev-notes/` is gitignored): 58 stages across 13 phases, each stage = one atomic commit, with a Design Decisions table (D1–D15) recording the rationale for every cross-cutting choice. The progress table there tracks what's Done vs Pending. Most `internal/*` packages are currently `doc.go` placeholders — consult the roadmap before implementing, and update its progress table when a stage lands. `.dev-notes/docs/API_ROADMAP.es.md` is a Spanish translation of the same document — keep it in sync when the English one changes.
+- Published documentation is deliberately absent while the backend is in progress: the finished project will be documented in `README.md` only. Do not create `docs/` or other committed reference docs.
+- Git Flow with release-per-phase (`v2.x.0` tags); feature branches named `feature/api-<desc>`
 
 ## Collaboration Mode (Backend)
 
