@@ -16,8 +16,9 @@
 #
 # Measured on minikube with RATE_LIMIT_RPM=20, RATE_LIMIT_BURST=10, 30 requests:
 #
-#   1 replica   allowed 10   throttled 20   <- the configured allowance
-#   3 replicas  allowed 24   throttled  6   <- roughly 3x, as predicted
+#   1 replica,  in-process   allowed 10   throttled 20   <- the configured allowance
+#   3 replicas, in-process   allowed 24   throttled  6   <- the defect, ~3x
+#   3 replicas, Redis        allowed 10   throttled 20   <- fixed, matches 1 replica
 #
 # Usage:
 #   ./loadtest.sh [namespace] [requests]

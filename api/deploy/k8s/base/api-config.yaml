@@ -26,5 +26,9 @@ data:
   # The pod network: only from these peers is X-Forwarded-For believed, so a
   # client cannot forge its own address to bypass the rate limiter.
   TRUSTED_PROXIES: '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+  # Shared state for the rate limiter. Required whenever replicas > 1: with
+  # per-process counters each pod admits the full allowance on its own.
+  REDIS_ENABLED: 'true'
+  REDIS_ADDR: 'pokedex-redis:6379'
   CACHE_ENABLED: 'true'
   CACHE_TTL: 5m

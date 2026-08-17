@@ -77,6 +77,19 @@ services:
       - /app/bin
     networks: [pokedex-dev]
 
+  # Present so the Compose stack matches the Kubernetes one, but disabled in the
+  # API by default: a single instance has no state to share.
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'no', '--save', '', '--maxmemory', '64mb', '--maxmemory-policy', 'allkeys-lru']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [pokedex-dev]
+
 volumes:
   postgres_data:
     name: pokedex_postgres_data_dev

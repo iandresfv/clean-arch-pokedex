@@ -8,6 +8,7 @@ resources:
   - db-secret.yaml
   - api-config.yaml
   - postgres-statefulset.yaml
+  - redis.yaml
   - migrate-job.yaml
   - api-deployment.yaml
   - api-service.yaml
