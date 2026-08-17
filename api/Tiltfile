@@ -1,0 +1,94 @@
+# Tilt configuration for the local Kubernetes loop.
+#
+# Tilt does not replace Docker Compose. Compose stays the default loop for
+# writing handlers and queries: it starts in seconds and needs no manifests.
+# Tilt exists for the work that only exists in Kubernetes — probe behaviour,
+# rollout behaviour, resource limits, multi-replica behaviour — where an
+# edit-to-running cycle measured in minutes makes iteration impractical.
+
+load('ext://restart_process', 'docker_build_with_restart')
+
+# A guard, not a formality: `tilt up` against a production context would deploy
+# this stack to it. Restricting the allowed contexts makes that impossible.
+allow_k8s_contexts([])
+if k8s_context() not in ('minikube', 'kind-kind', 'docker-desktop'):
+    fail(
+        'Refusing to run against context %r. Switch with: kubectl config use-context minikube'
+        % k8s_context()
+    )
+
+k8s_yaml(kustomize('deploy/k8s/overlays/dev'))
+
+# The binary is compiled on the host rather than inside the image so that
+# live_update has something small to sync. A full image rebuild plus rollout
+# takes tens of seconds; syncing a binary and restarting the process takes one.
+local_resource(
+    'api-compile',
+    cmd='CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/server ./cmd/server/',
+    deps=['cmd', 'internal', 'go.mod', 'go.sum'],
+    labels=['build'],
+)
+
+docker_build_with_restart(
+    'pokedex-api',
+    context='.',
+    dockerfile_contents='''
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /app
+COPY build/server /app/server
+COPY migrations /app/migrations
+USER nonroot:nonroot
+ENTRYPOINT ["/app/server"]
+''',
+    only=['build/server', 'migrations'],
+    entrypoint=['/app/server'],
+    live_update=[
+        # Syncs the rebuilt binary into the running container; restart_process
+        # then restarts just the process, skipping the image build entirely.
+        sync('build/server', '/app/server'),
+    ],
+)
+
+k8s_resource(
+    'pokedex-api',
+    port_forwards=['8080:8080'],
+    resource_deps=['api-compile', 'pokedex-postgres'],
+    labels=['app'],
+)
+
+k8s_resource(
+    'pokedex-postgres',
+    port_forwards=['5433:5432'],
+    labels=['data'],
+)
+
+# Migrations are a manual trigger rather than an automatic step: re-running them
+# on every code sync would be noise, and a schema change is a deliberate act.
+k8s_resource(
+    'pokedex-migrate',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    auto_init=True,
+    resource_deps=['pokedex-postgres'],
+    labels=['data'],
+)
+
+# Seeding makes ~2600 upstream requests, so it never runs automatically.
+local_resource(
+    'seed-database',
+    cmd='DB_HOST=localhost DB_PORT=5433 go run ./cmd/seeder/ --limit=1302',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    auto_init=False,
+    resource_deps=['pokedex-postgres'],
+    labels=['data'],
+)
+
+local_resource(
+    'api-tests',
+    cmd='go test -short ./...',
+    deps=['internal', 'cmd'],
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    auto_init=False,
+    labels=['verify'],
+)
+
+print('Pokedex API — Tilt is up. Web UI: http://localhost:10350')
