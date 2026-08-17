@@ -1,0 +1,139 @@
+// Package handler contains the HTTP layer: it parses requests, delegates to
+// services, and serialises responses. It holds no business rules — any
+// conditional about what a valid request means belongs in internal/service.
+package handler
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/model"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/reqctx"
+)
+
+// ProblemContentType is the media type defined by RFC 9457 for error bodies.
+const ProblemContentType = "application/problem+json"
+
+// problemBaseURI namespaces the machine-readable error identifiers.
+const problemBaseURI = "https://github.com/iandresfv/clean-arch-pokedex/errors/"
+
+// Problem is an RFC 9457 error object.
+//
+// A documented, standard envelope beats an ad-hoc {"error": "..."} shape that
+// every client has to learn: Type is a stable identifier a client can branch
+// on, while Detail is human-facing prose that may change freely.
+type Problem struct {
+	Type      string `json:"type"`
+	Title     string `json:"title"`
+	Status    int    `json:"status"`
+	Detail    string `json:"detail,omitempty"`
+	Instance  string `json:"instance,omitempty"`
+	RequestID string `json:"requestId,omitempty"`
+}
+
+// writeJSON serialises v as the response body.
+//
+// The body is encoded into a buffer before any header is written: encoding a
+// value directly into the ResponseWriter commits a 200 status the moment the
+// first byte flushes, so a failure halfway through would produce a truncated
+// body under a success status.
+func writeJSON(w http.ResponseWriter, r *http.Request, status int, v any) {
+	body, err := json.Marshal(v)
+	if err != nil {
+		reqctx.Logger(r.Context()).Error("encoding response failed", "error", err)
+		writeProblem(w, r, http.StatusInternalServerError, "Internal Server Error", "")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	if _, err := w.Write(body); err != nil {
+		// The client disconnected mid-write. Nothing can be sent now, so the
+		// only useful action is to record it.
+		reqctx.Logger(r.Context()).Debug("writing response failed", "error", err)
+	}
+}
+
+// writeProblem emits an RFC 9457 error body.
+func writeProblem(w http.ResponseWriter, r *http.Request, status int, title, detail string) {
+	p := Problem{
+		Type:      problemBaseURI + slugForStatus(status),
+		Title:     title,
+		Status:    status,
+		Detail:    detail,
+		Instance:  r.URL.Path,
+		RequestID: reqctx.RequestID(r.Context()),
+	}
+
+	body, err := json.Marshal(p)
+	if err != nil {
+		http.Error(w, title, status)
+		return
+	}
+
+	w.Header().Set("Content-Type", ProblemContentType)
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+}
+
+// handleServiceError maps a domain error onto an HTTP response.
+//
+// Unrecognised errors are logged in full and reported as a bare 500: the
+// message may embed a SQL fragment or a connection string, and returning it
+// would hand an attacker a description of the internals.
+func handleServiceError(w http.ResponseWriter, r *http.Request, err error) {
+	log := reqctx.Logger(r.Context())
+
+	switch {
+	// Not-found details are written for the client rather than taken from
+	// err.Error(): the wrapped chain repeats the identifier at every layer and
+	// describes the call stack, which is information for the log, not the
+	// caller. The resource is already identified by Instance.
+	case errors.Is(err, model.ErrPokemonNotFound):
+		log.Debug("pokemon not found", "error", err)
+		writeProblem(w, r, http.StatusNotFound, "Pokemon not found",
+			"no pokemon exists with the requested identifier")
+	case errors.Is(err, model.ErrSpeciesNotFound):
+		log.Debug("species not found", "error", err)
+		writeProblem(w, r, http.StatusNotFound, "Species not found",
+			"no species exists for the requested pokemon")
+	case errors.Is(err, model.ErrTypeNotFound):
+		log.Debug("type not found", "error", err)
+		writeProblem(w, r, http.StatusNotFound, "Type not found",
+			"no elemental type exists with the requested name")
+	case errors.Is(err, model.ErrInvalidID):
+		writeProblem(w, r, http.StatusBadRequest, "Invalid identifier", err.Error())
+	case errors.Is(err, model.ErrInvalidPagination):
+		writeProblem(w, r, http.StatusBadRequest, "Invalid pagination", err.Error())
+	case errors.Is(err, model.ErrInvalidQuery):
+		writeProblem(w, r, http.StatusBadRequest, "Invalid query", err.Error())
+	case errors.Is(err, model.ErrUnknownParameter):
+		writeProblem(w, r, http.StatusBadRequest, "Unknown query parameter", err.Error())
+	case errors.Is(err, r.Context().Err()) && r.Context().Err() != nil:
+		// The client went away or the request timed out. No response will be
+		// read, so this is logged at debug and not treated as a server fault.
+		log.Debug("request cancelled", "error", err)
+	default:
+		log.Error("unhandled service error", "error", err)
+		writeProblem(w, r, http.StatusInternalServerError, "Internal Server Error",
+			"an unexpected error occurred")
+	}
+}
+
+// slugForStatus turns a status code into the stable identifier used in the
+// problem type URI.
+func slugForStatus(status int) string {
+	switch status {
+	case http.StatusBadRequest:
+		return "bad-request"
+	case http.StatusNotFound:
+		return "not-found"
+	case http.StatusTooManyRequests:
+		return "rate-limited"
+	case http.StatusServiceUnavailable:
+		return "unavailable"
+	default:
+		return "internal"
+	}
+}
