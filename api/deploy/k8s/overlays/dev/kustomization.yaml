@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pokedex-dev
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - nodeport.yaml
+
+# One replica: the dev loop cares about iteration speed, not availability. The
+# rate limiter's single-instance correctness also holds here, which is exactly
+# why the prod overlay's three replicas expose the defect Redis fixes.
+replicas:
+  - name: pokedex-api
+    count: 1
+
+patches:
+  - path: dev-patch.yaml
+    target:
+      kind: Deployment
+      name: pokedex-api
+
+images:
+  - name: pokedex-api
+    newTag: dev

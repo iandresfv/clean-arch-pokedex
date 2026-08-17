@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokedex-api
+  labels:
+    app.kubernetes.io/name: pokedex-api
+    app.kubernetes.io/component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pokedex-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # Never drop below the desired capacity during a rollout: a new pod must
+      # become ready before an old one is removed.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pokedex-api
+        app.kubernetes.io/component: api
+    spec:
+      # Comfortably above the server's 10s shutdown deadline. If it were
+      # shorter, the kubelet would SIGKILL mid-drain and the graceful path
+      # would never complete.
+      terminationGracePeriodSeconds: 30
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Migrations run as a Job for the whole rollout, not per pod. This init
+      # container simply waits for the schema to exist, so a pod never starts
+      # against a database it cannot query.
+      initContainers:
+        - name: wait-for-schema
+          image: postgres:18-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until psql "$DATABASE_URL" -c 'SELECT 1 FROM schema_migrations' >/dev/null 2>&1; do
+                echo "waiting for migrations to be applied..."
+                sleep 2
+              done
+              echo "schema is present"
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pokedex-db
+                  key: database-url
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ['ALL']
+
+      containers:
+        - name: api
+          image: pokedex-api:dev
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: pokedex-api-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pokedex-db
+                  key: password
+            # A Go process does not observe the container memory limit on its
+            # own; without GOMEMLIMIT the garbage collector sizes the heap
+            # against the node's memory and the pod is OOM-killed instead.
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+
+          # Liveness must not touch the database. If PostgreSQL is down,
+          # restarting the API fixes nothing and the restarts make recovery
+          # harder — a database blip becomes a cluster-wide restart storm.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          # Readiness does check the database, so an instance that cannot serve
+          # is removed from the Service without being killed.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+
+          # Covers a slow first boot (pool warm-up, backoff against a database
+          # still starting) that the liveness probe would otherwise kill.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+
+          lifecycle:
+            preStop:
+              # Deleting a pod sends SIGTERM and removes it from the Service
+              # endpoints concurrently, and endpoint removal takes time to
+              # propagate to every node. Without this pause the pod stops
+              # accepting connections while traffic is still being routed to
+              # it — a burst of failed requests on every single deployment.
+              #
+              # The native sleep action (Kubernetes 1.30+) is used rather than
+              # `exec: sleep 5` because the distroless runtime image has no
+              # shell and no sleep binary to invoke.
+              sleep:
+                seconds: 5
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']

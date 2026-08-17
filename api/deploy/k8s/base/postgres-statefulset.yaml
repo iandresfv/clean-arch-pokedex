@@ -1,0 +1,90 @@
+# PostgreSQL as a StatefulSet.
+#
+# Running a database inside the cluster is deliberate here: it keeps the local
+# environment self-contained. In production this would be a managed instance or
+# an operator such as CloudNativePG — a bare StatefulSet provides no backups, no
+# failover and no point-in-time recovery.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pokedex-postgres
+  labels:
+    app.kubernetes.io/name: pokedex-postgres
+spec:
+  # Headless: a StatefulSet needs stable per-pod DNS, which a ClusterIP with
+  # virtual load balancing cannot provide.
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: pokedex-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pokedex-postgres
+spec:
+  serviceName: pokedex-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pokedex-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pokedex-postgres
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: pokedex
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pokedex-db
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: '--locale=C --encoding=UTF8'
+            # PostgreSQL 18 defaults PGDATA to a version-specific subdirectory.
+            # Set explicitly so the volume mount below is unambiguous.
+            - name: PGDATA
+              value: /var/lib/postgresql/18/docker
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+          readinessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'postgres', '-d', 'pokedex']
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ['pg_isready', '-U', 'postgres']
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 2Gi

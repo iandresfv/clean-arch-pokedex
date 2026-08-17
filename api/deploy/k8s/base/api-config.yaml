@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pokedex-api-config
+data:
+  APP_ENV: production
+  # 0.0.0.0, not localhost: binding to loopback inside a container makes the
+  # port unreachable from outside it, and every probe fails.
+  SERVER_HOST: '0.0.0.0'
+  SERVER_PORT: '8080'
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  DB_HOST: pokedex-postgres
+  DB_PORT: '5432'
+  DB_USER: postgres
+  DB_NAME: pokedex
+  DB_SSLMODE: disable
+  # replicas * DB_MAX_CONNS must stay under the server's max_connections (100).
+  # Three replicas at 25 leaves room for the migration job and an admin session.
+  DB_MAX_CONNS: '25'
+  DB_MIN_CONNS: '5'
+  CORS_ALLOWED_ORIGINS: 'https://pokedex.example'
+  RATE_LIMIT_ENABLED: 'true'
+  RATE_LIMIT_RPM: '120'
+  RATE_LIMIT_BURST: '30'
+  # The pod network: only from these peers is X-Forwarded-For believed, so a
+  # client cannot forge its own address to bypass the rate limiter.
+  TRUSTED_PROXIES: '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+  CACHE_ENABLED: 'true'
+  CACHE_TTL: 5m
