@@ -13,6 +13,7 @@ import (
 
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/config"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/handler"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/middleware"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/repository/postgres"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/router"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/service"
@@ -65,9 +66,28 @@ func run() error {
 		Health:  handler.NewHealthHandler(pokemonRepo, version),
 	})
 
+	// Order is outermost first, and every position is deliberate:
+	//
+	//   Recovery  must be able to catch a panic raised by any other middleware.
+	//   RequestID must precede anything that logs, so every line correlates.
+	//   CORS      must precede Logging and Timeout so that error responses —
+	//             the 500 from Recovery, the 503 from Timeout — still carry
+	//             Access-Control-Allow-Origin. With CORS innermost the browser
+	//             reports a CORS failure that masks the real error, which is
+	//             among the most time-consuming bugs to diagnose because the
+	//             actual cause is invisible in DevTools.
+	//   Timeout   innermost, so it bounds handler execution only.
+	handlerChain := middleware.Chain(mux,
+		middleware.Recovery(),
+		middleware.RequestID(logger),
+		middleware.CORS(cfg.CORS),
+		middleware.Logging(),
+		middleware.Timeout(cfg.Server.HandlerTimeout),
+	)
+
 	srv := &http.Server{
 		Addr:              cfg.Server.Addr(),
-		Handler:           mux,
+		Handler:           handlerChain,
 		ReadTimeout:       cfg.Server.ReadTimeout,
 		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
 		WriteTimeout:      cfg.Server.WriteTimeout,
