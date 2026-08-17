@@ -1,0 +1,12 @@
+# Keeps a voluntary disruption — a node drain, a cluster upgrade — from taking
+# every replica at once. Without it, `kubectl drain` can evict all pods
+# simultaneously and the service disappears during routine maintenance.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pokedex-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pokedex-api

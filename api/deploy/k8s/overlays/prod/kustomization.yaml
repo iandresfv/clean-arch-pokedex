@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pokedex
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - hpa.yaml
+  - pdb.yaml
+
+# Two replicas minimum so a single pod restart never means zero capacity.
+#
+# This is also where the in-process rate limiter becomes incorrect: the Service
+# spreads a client's connections across pods, each sees a fraction of the
+# traffic, and the effective limit becomes N times the configured one. Phase 12
+# moves that state to Redis.
+replicas:
+  - name: pokedex-api
+    count: 3
+
+patches:
+  - path: prod-patch.yaml
+    target:
+      kind: Deployment
+      name: pokedex-api
+
+images:
+  - name: pokedex-api
+    newTag: 2.10.0

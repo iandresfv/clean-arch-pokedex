@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokedex-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: APP_ENV
+              value: development
+            - name: LOG_LEVEL
+              value: debug
+            - name: LOG_FORMAT
+              value: text
+            - name: CORS_ALLOWED_ORIGINS
+              value: 'http://localhost:5173'
+            # Off by default in dev: a throttled response while iterating looks
+            # like an application bug and wastes time.
+            - name: RATE_LIMIT_ENABLED
+              value: 'false'
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 500m
+              memory: 192Mi
