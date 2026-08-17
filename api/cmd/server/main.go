@@ -12,6 +12,10 @@ import (
 	"syscall"
 
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/config"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/handler"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/repository/postgres"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/router"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/service"
 )
 
 // version is injected at build time with -ldflags "-X main.version=...".
@@ -40,11 +44,25 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	// Composition root: every dependency is constructed once, here, and passed
+	// explicitly. This is the Go equivalent of the client's createContainer —
+	// a DI framework would trade these few lines for reflection at startup.
+	pool, err := postgres.NewPool(ctx, cfg.Database, logger)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	pokemonRepo := postgres.NewPokemonRepository(pool)
+	typeRepo := postgres.NewTypeRepository(pool)
+
+	pokemonSvc := service.NewPokemonService(pokemonRepo, logger)
+	typeSvc := service.NewTypeService(typeRepo, logger)
+
+	mux := router.New(router.Handlers{
+		Pokemon: handler.NewPokemonHandler(pokemonSvc),
+		Type:    handler.NewTypeHandler(typeSvc),
+		Health:  handler.NewHealthHandler(pokemonRepo, version),
 	})
 
 	srv := &http.Server{
