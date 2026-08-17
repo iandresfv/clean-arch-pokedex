@@ -81,6 +81,18 @@ func run() error {
 	pokemonSvc := service.NewPokemonService(pokemonRepo, logger)
 	typeSvc := service.NewTypeService(typeRepo, logger)
 
+	// Seeded from the database so a restart does not invalidate every client's
+	// cached responses; refreshed when a seeding run bumps it.
+	initialVersion, err := pokemonRepo.DatasetVersion(ctx)
+	if err != nil {
+		logger.Warn("could not read dataset version; starting at 1", "error", err)
+		initialVersion = 1
+	}
+	datasetVersion := middleware.NewDatasetVersion(initialVersion)
+
+	limiterStore := middleware.NewMemoryRateLimitStore(cfg.RateLimit.RequestsPerMin, cfg.RateLimit.Burst)
+	go limiterStore.Cleanup(ctx, time.Minute)
+
 	mux := router.New(router.Handlers{
 		Pokemon: handler.NewPokemonHandler(pokemonSvc),
 		Type:    handler.NewTypeHandler(typeSvc),
@@ -97,12 +109,20 @@ func run() error {
 	//             reports a CORS failure that masks the real error, which is
 	//             among the most time-consuming bugs to diagnose because the
 	//             actual cause is invisible in DevTools.
+	//   Logging   after CORS so it observes the status actually sent.
+	//   RateLimit before the cache: a throttled client must not be served from
+	//             it, or the limit would be trivially bypassed.
 	//   Timeout   innermost, so it bounds handler execution only.
 	handlerChain := middleware.Chain(mux,
 		middleware.Recovery(),
 		middleware.RequestID(logger),
 		middleware.CORS(cfg.CORS),
+		middleware.SecurityHeaders(cfg.TLS.Enabled),
 		middleware.Logging(),
+		middleware.RateLimit(limiterStore,
+			middleware.NewClientIPResolver(cfg.RateLimit.TrustedProxies), cfg.RateLimit),
+		middleware.HTTPCache(cfg.Cache.TTL, datasetVersion),
+		middleware.MaxBodySize(1<<20),
 		middleware.Timeout(cfg.Server.HandlerTimeout),
 	)
 
