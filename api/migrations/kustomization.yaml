@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Declared here rather than in deploy/k8s/base because Kustomize refuses to read
+# files above a kustomization's own directory. Keeping the generator next to the
+# SQL means the manifests always ship exactly the migrations in the repository,
+# with no image rebuild when one is added.
+configMapGenerator:
+  - name: pokedex-migrations
+    files:
+      - 000001_create_pokemon_tables.up.sql
+      - 000001_create_pokemon_tables.down.sql
+      - 000002_create_type_tables.up.sql
+      - 000002_create_type_tables.down.sql
+      - 000003_create_indexes.up.sql
+      - 000003_create_indexes.down.sql
+
+# The Job's volume reference must stay stable; migrations are re-applied by
+# re-running the Job explicitly.
+generatorOptions:
+  disableNameSuffixHash: true

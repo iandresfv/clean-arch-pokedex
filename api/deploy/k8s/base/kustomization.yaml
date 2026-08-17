@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # A kustomization directory, which Kustomize allows above the root; raw file
+  # references outside it are refused.
+  - ../../../migrations
+  - db-secret.yaml
+  - api-config.yaml
+  - postgres-statefulset.yaml
+  - migrate-job.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: pokedex

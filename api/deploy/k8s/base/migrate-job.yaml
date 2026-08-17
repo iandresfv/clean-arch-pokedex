@@ -1,0 +1,42 @@
+# Migrations as a Job, not an init container on every pod.
+#
+# An init container runs once per pod, so three replicas would apply the same
+# migrations three times concurrently. golang-migrate takes a lock and would
+# serialise them, but the correct model is one Job per rollout with the pods
+# waiting for it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pokedex-migrate
+  annotations:
+    # Tilt shows this as a manual trigger rather than running it on every sync.
+    tilt.dev/manual-trigger: 'true'
+spec:
+  backoffLimit: 5
+  # Kept briefly after success so `kubectl logs` still works when diagnosing a
+  # rollout, then cleaned up automatically.
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: migrate/migrate:v4.19.0
+          args:
+            - '-path=/migrations'
+            - '-database=$(DATABASE_URL)'
+            - 'up'
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: pokedex-db
+                  key: database-url
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+              readOnly: true
+      volumes:
+        - name: migrations
+          configMap:
+            name: pokedex-migrations
