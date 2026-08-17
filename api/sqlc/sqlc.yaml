@@ -1,0 +1,28 @@
+version: "2"
+
+sql:
+  - engine: postgresql
+    # Pointing at the migrations directory rather than a standalone schema file
+    # keeps generation in step with what is actually applied. sqlc understands
+    # golang-migrate's naming and ignores *.down.sql.
+    schema: ../migrations
+    queries: ./queries
+    gen:
+      go:
+        package: postgres
+        out: ../internal/repository/postgres
+        sql_package: pgx/v5
+        emit_interface: false
+        emit_empty_slices: true
+        emit_prepared_queries: false
+        emit_exact_table_names: false
+        emit_json_tags: false
+        # Nullable columns become pointers rather than sql.NullString wrappers,
+        # which map cleanly onto the domain's *string fields.
+        emit_pointers_for_null_types: true
+        overrides:
+          # numeric maps to pgtype.Numeric by default, which carries an
+          # arbitrary-precision representation this schema does not need: the
+          # multiplier is constrained to 0, 0.5, 1 or 2 by a CHECK.
+          - db_type: pg_catalog.numeric
+            go_type: float64
