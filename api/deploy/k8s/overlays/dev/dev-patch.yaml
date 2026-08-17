@@ -20,6 +20,9 @@ spec:
             # like an application bug and wastes time.
             - name: RATE_LIMIT_ENABLED
               value: 'false'
+            # One replica means process-local state is already correct.
+            - name: REDIS_ENABLED
+              value: 'false'
           resources:
             requests:
               cpu: 20m
