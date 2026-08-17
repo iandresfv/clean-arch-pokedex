@@ -1,0 +1,86 @@
+name: pokedex
+
+# Production-like stack: built images, no bind mounts, migrations run to
+# completion before the API starts.
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:-pokedex}
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    volumes:
+      # PostgreSQL 18 uses /var/lib/postgresql/18/docker; mounting the pre-18
+      # path persists nothing, silently.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-pokedex}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [pokedex]
+
+  # Migrations run as a one-shot service rather than at API startup: with more
+  # than one replica, every instance would race to apply the same schema.
+  migrate:
+    image: migrate/migrate:v4.19.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../../migrations:/migrations:ro
+    command:
+      - '-path=/migrations'
+      - '-database=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-pokedex}?sslmode=disable'
+      - 'up'
+    restart: on-failure
+    networks: [pokedex]
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      APP_ENV: production
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-pokedex}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://pokedex.example}
+    ports:
+      - '${SERVER_PORT:-8080}:8080'
+    healthcheck:
+      # distroless has no shell and no curl, so the binary probes itself.
+      test: ['CMD', '/app/server', '-health']
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    networks: [pokedex]
+
+volumes:
+  postgres_data:
+    name: pokedex_postgres_data
+
+networks:
+  pokedex:
+    name: pokedex
+    driver: bridge
