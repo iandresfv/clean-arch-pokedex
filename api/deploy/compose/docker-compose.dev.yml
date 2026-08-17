@@ -1,0 +1,31 @@
+name: pokedex-dev
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: pokedex-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-pokedex}
+      # Deterministic collation: without it the image inherits the host locale
+      # and ORDER BY on text columns differs between machines.
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      # PostgreSQL 18 moved PGDATA to a version-specific subdirectory
+      # (/var/lib/postgresql/18/docker). Mounting the pre-18 path
+      # (/var/lib/postgresql/data) silently persists nothing.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-pokedex}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  postgres_data:
+    name: pokedex_postgres_data_dev
