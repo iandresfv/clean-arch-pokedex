@@ -1,0 +1,450 @@
+openapi: 3.1.0
+
+# Hand-written rather than generated from code annotations.
+#
+# Annotation-driven generation couples the document to comments that drift from
+# reality without failing anything. A hand-written specification validated in CI
+# is a contract the implementation is checked against, not a description derived
+# from it.
+
+info:
+  title: Pokedex API
+  version: 2.9.0
+  summary: Read-only Pokemon catalogue served from PostgreSQL.
+  description: |
+    Replaces PokeAPI as the data source for the Clean Architecture Pokedex client.
+
+    Design notes visible in this contract:
+
+    - Field names are camelCase because the only consumer is a TypeScript
+      client whose DTOs already use that convention.
+    - List responses carry complete entities rather than a slim projection: the
+      client's repository port returns domain entities, so a lighter shape would
+      force one detail request per row — the N+1 pattern this API removes.
+    - Errors follow RFC 9457 (`application/problem+json`) so a client has one
+      documented error shape to handle, whatever fails.
+    - Successful responses carry a weak `ETag`. Presenting it in `If-None-Match`
+      yields `304 No content`, which removes the body from the wire entirely.
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.pokedex.example
+    description: Production
+
+tags:
+  - name: Pokemon
+    description: The catalogue.
+  - name: Types
+    description: Elemental types and their effectiveness matrix.
+  - name: Operations
+    description: Liveness and readiness probes.
+
+paths:
+  /health:
+    get:
+      tags: [Operations]
+      summary: Liveness probe
+      description: |
+        Reports on the process alone and deliberately does not touch the
+        database. If PostgreSQL is down, restarting the API fixes nothing, and a
+        liveness probe that fails on a database blip turns it into a
+        cluster-wide restart storm.
+      operationId: getHealth
+      responses:
+        '200':
+          description: The process is running.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, examples: [ok] }
+                  version: { type: string, examples: ['2.9.0'] }
+
+  /ready:
+    get:
+      tags: [Operations]
+      summary: Readiness probe
+      description: |
+        Verifies every dependency required to serve traffic. A failure removes
+        the instance from load balancing without restarting it, so it can
+        recover on its own.
+      operationId: getReady
+      responses:
+        '200':
+          description: Ready to serve traffic.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Readiness' }
+        '503':
+          description: A dependency is unreachable.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Readiness' }
+
+  /api/v1/pokemon:
+    get:
+      tags: [Pokemon]
+      summary: List the catalogue
+      operationId: listPokemon
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: type
+          in: query
+          required: false
+          description: Restrict the listing to one elemental type.
+          schema: { type: string, examples: [fire] }
+      responses:
+        '200':
+          description: A page of the catalogue.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Cache-Control: { $ref: '#/components/headers/CacheControl' }
+            X-Request-ID: { $ref: '#/components/headers/RequestID' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedPokemon' }
+        '304': { $ref: '#/components/responses/NotModified' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/pokemon/search:
+    get:
+      tags: [Pokemon]
+      summary: Search by name substring
+      description: |
+        Case-insensitive substring match. The term must be at least two
+        characters: a trigram index cannot serve a shorter pattern, so anything
+        below that would silently degrade to a full table scan.
+      operationId: searchPokemon
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search term, minimum two characters.
+          schema: { type: string, minLength: 2, examples: [char] }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of matches.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            X-Request-ID: { $ref: '#/components/headers/RequestID' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedPokemon' }
+        '304': { $ref: '#/components/responses/NotModified' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/pokemon/{id}:
+    get:
+      tags: [Pokemon]
+      summary: Get one Pokemon in full
+      description: Species is embedded, so no second request is required.
+      operationId: getPokemonById
+      parameters:
+        - $ref: '#/components/parameters/PokemonId'
+      responses:
+        '200':
+          description: The Pokemon.
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            X-Request-ID: { $ref: '#/components/headers/RequestID' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pokemon' }
+        '304': { $ref: '#/components/responses/NotModified' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/pokemon/{id}/species:
+    get:
+      tags: [Pokemon]
+      summary: Get the species of a Pokemon
+      description: |
+        A species is the conceptual creature; a Pokemon is one concrete form of
+        it. Several forms therefore share a species.
+      operationId: getPokemonSpecies
+      parameters:
+        - $ref: '#/components/parameters/PokemonId'
+      responses:
+        '200':
+          description: The species.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Species' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/types:
+    get:
+      tags: [Types]
+      summary: List all eighteen types
+      operationId: listTypes
+      responses:
+        '200':
+          description: Every elemental type.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Type' }
+
+  /api/v1/types/{name}/matchups:
+    get:
+      tags: [Types]
+      summary: Defensive matchups for a type
+      description: |
+        How much damage the given type takes from each attacking type. Neutral
+        matchups are omitted: they are the default, and listing them would trade
+        clarity for completeness nobody renders.
+      operationId: getTypeMatchups
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string, examples: [fire] }
+      responses:
+        '200':
+          description: The matchups.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Matchups' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: One-based page number.
+      schema: { type: integer, minimum: 1, default: 1, examples: [1] }
+
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: |
+        Items per page. Capped at 100: without a ceiling, `?limit=1000000` is a
+        trivially available denial of service.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+    PokemonId:
+      name: id
+      in: path
+      required: true
+      description: National Pokedex number.
+      schema: { type: integer, minimum: 1, examples: [25] }
+
+  headers:
+    ETag:
+      description: Weak validator; present it in `If-None-Match` to receive a 304.
+      schema: { type: string, examples: ['W/"799b50e7ac87e7fa"'] }
+    CacheControl:
+      description: Caching directives for browsers and intermediaries.
+      schema: { type: string, examples: ['public, max-age=300, stale-while-revalidate=60'] }
+    RequestID:
+      description: |
+        Correlation identifier attached to every log line for this request.
+        Quote it when reporting a problem.
+      schema: { type: string, examples: ['8f14e45fceea167a'] }
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema: { type: integer, examples: [30] }
+
+  responses:
+    NotModified:
+      description: |
+        The presented validator still matches, so the body is not re-sent.
+      headers:
+        ETag: { $ref: '#/components/headers/ETag' }
+
+    BadRequest:
+      description: |
+        A malformed parameter, or one this endpoint does not define. Unknown
+        parameters are rejected rather than ignored: `?pgae=2` silently serving
+        page 1 is a bug with nothing in the logs to explain it.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+    NotFound:
+      description: No such resource.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+    TooManyRequests:
+      description: Rate limit exceeded.
+      headers:
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+    InternalError:
+      description: |
+        An unexpected failure. The detail is deliberately generic: the
+        underlying message may carry a SQL fragment or a connection string.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem details.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          description: Stable identifier a client may branch on.
+          examples: ['https://github.com/iandresfv/clean-arch-pokedex/errors/not-found']
+        title: { type: string, examples: ['Pokemon not found'] }
+        status: { type: integer, examples: [404] }
+        detail: { type: string, examples: ['no pokemon exists with the requested identifier'] }
+        instance: { type: string, examples: ['/api/v1/pokemon/9999'] }
+        requestId: { type: string, examples: ['8f14e45fceea167a'] }
+
+    Stats:
+      type: object
+      description: The six base stats, a fixed set defined by the games.
+      required: [hp, attack, defense, specialAttack, specialDefense, speed]
+      properties:
+        hp: { type: integer, minimum: 1, maximum: 255, examples: [45] }
+        attack: { type: integer, minimum: 1, maximum: 255, examples: [49] }
+        defense: { type: integer, minimum: 1, maximum: 255, examples: [49] }
+        specialAttack: { type: integer, minimum: 1, maximum: 255, examples: [65] }
+        specialDefense: { type: integer, minimum: 1, maximum: 255, examples: [65] }
+        speed: { type: integer, minimum: 1, maximum: 255, examples: [45] }
+
+    Sprites:
+      type: object
+      description: |
+        Artwork URLs. These point at PokeAPI's GitHub-hosted images: this API
+        replaces PokeAPI as the source of data, not of binary assets.
+      properties:
+        frontDefault: { type: [string, 'null'], format: uri }
+        frontShiny: { type: [string, 'null'], format: uri }
+        backDefault: { type: [string, 'null'], format: uri }
+        backShiny: { type: [string, 'null'], format: uri }
+        officialArtwork: { type: [string, 'null'], format: uri }
+
+    Species:
+      type: object
+      required: [id, name, generation, flavorText, isLegendary, isMythical]
+      properties:
+        id: { type: integer, examples: [1] }
+        name: { type: string, examples: [bulbasaur] }
+        generation: { type: integer, minimum: 1, maximum: 9, examples: [1] }
+        flavorText: { type: string }
+        habitat: { type: [string, 'null'], examples: [grassland] }
+        color: { type: [string, 'null'], examples: [green] }
+        shape: { type: [string, 'null'], examples: [quadruped] }
+        isLegendary: { type: boolean }
+        isMythical: { type: boolean }
+
+    Pokemon:
+      type: object
+      required: [id, name, pokedexOrder, types, stats, heightDm, weightHg, sprites]
+      properties:
+        id: { type: integer, examples: [1] }
+        name: { type: string, examples: [bulbasaur] }
+        pokedexOrder: { type: integer, examples: [1] }
+        types:
+          type: array
+          description: Ordered by slot; the first entry is the primary type.
+          minItems: 1
+          maxItems: 2
+          items: { type: string }
+          examples: [[grass, poison]]
+        stats: { $ref: '#/components/schemas/Stats' }
+        heightDm:
+          type: integer
+          description: Height in decimetres, as PokeAPI reports it. Formatting is the client's concern.
+          examples: [7]
+        weightHg:
+          type: integer
+          description: Weight in hectograms.
+          examples: [69]
+        baseExperience: { type: [integer, 'null'], examples: [64] }
+        sprites: { $ref: '#/components/schemas/Sprites' }
+        species:
+          oneOf:
+            - $ref: '#/components/schemas/Species'
+            - type: 'null'
+
+    PokemonListItem:
+      allOf:
+        - $ref: '#/components/schemas/Pokemon'
+        - type: object
+          properties:
+            spriteUrl:
+              type: [string, 'null']
+              description: Best available artwork, mirroring the client's Sprites.getBestQuality.
+              format: uri
+
+    PaginatedPokemon:
+      type: object
+      description: |
+        Field names mirror the client's `PaginatedResult<T>` exactly, which is
+        why its adapter needs no renaming step.
+      required: [data, total, page, limit, totalPages, hasNextPage, hasPreviousPage]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PokemonListItem' }
+        total: { type: integer, examples: [1302] }
+        page: { type: integer, examples: [1] }
+        limit: { type: integer, examples: [20] }
+        totalPages: { type: integer, examples: [66] }
+        hasNextPage: { type: boolean }
+        hasPreviousPage: { type: boolean }
+
+    Type:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, examples: [10] }
+        name: { type: string, examples: [fire] }
+
+    Matchups:
+      type: object
+      required: [type, weaknesses, resistances, immunities]
+      properties:
+        type: { type: string, examples: [fire] }
+        weaknesses:
+          type: array
+          description: Attacking types that deal double damage.
+          items: { type: string }
+          examples: [[ground, rock, water]]
+        resistances:
+          type: array
+          description: Attacking types that deal half damage.
+          items: { type: string }
+        immunities:
+          type: array
+          description: Attacking types that deal no damage at all.
+          items: { type: string }
+
+    Readiness:
+      type: object
+      required: [status, checks]
+      properties:
+        status: { type: string, examples: [ready] }
+        checks:
+          type: object
+          additionalProperties: { type: string }
+          examples: [{ postgres: ok }]
+        version: { type: string }
+        duration: { type: string, examples: ['1.6ms'] }

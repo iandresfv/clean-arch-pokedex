@@ -173,8 +173,12 @@ tilt-down: ## Tear down everything Tilt created
 # --- Documentation ---------------------------------------------------------
 
 .PHONY: validate-openapi
-validate-openapi: ## Validate the OpenAPI document
-	go run ./cmd/openapi-validate/ docs/openapi.yaml
+validate-openapi: ## Check that every served route is documented, and vice versa
+	go test ./internal/router/ -run TestEveryRouteIsDocumented -v
+
+.PHONY: docs-sync
+docs-sync: ## Copy the spec into the embedded asset directory
+	cp docs/openapi.yaml internal/handler/assets/openapi.yaml
 
 .PHONY: tools
 tools: ## Install the development tooling this Makefile expects
