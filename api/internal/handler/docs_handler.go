@@ -52,23 +52,37 @@ func (h *DocsHandler) Spec(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(h.spec)
 }
 
+// servableAssets is an allowlist mapping a request path to its content type.
+//
+// An allowlist rather than a lookup built from the URL: embed.FS already
+// rejects traversal, but deriving both the file and its content type from
+// caller input means any future addition to the asset directory becomes
+// reachable, and possibly served under a type it should not have.
+var servableAssets = map[string]struct {
+	file        string
+	contentType string
+}{
+	"swagger-ui.css":       {"assets/swagger-ui.css", "text/css; charset=utf-8"},
+	"swagger-ui-bundle.js": {"assets/swagger-ui-bundle.js", "application/javascript; charset=utf-8"},
+	"LICENSE":              {"assets/LICENSE", "text/plain; charset=utf-8"},
+}
+
 // Assets serves the viewer's static files.
 func (h *DocsHandler) Assets(w http.ResponseWriter, r *http.Request) {
-	name := strings.TrimPrefix(r.URL.Path, "/docs/")
-	data, err := docsFS.ReadFile("assets/" + name)
+	asset, ok := servableAssets[strings.TrimPrefix(r.URL.Path, "/docs/")]
+	if !ok {
+		writeProblem(w, r, http.StatusNotFound, "Not Found", "no such documentation asset")
+		return
+	}
+
+	data, err := docsFS.ReadFile(asset.file)
 	if err != nil {
 		writeProblem(w, r, http.StatusNotFound, "Not Found", "no such documentation asset")
 		return
 	}
 
-	switch {
-	case strings.HasSuffix(name, ".css"):
-		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	case strings.HasSuffix(name, ".js"):
-		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	default:
-		w.Header().Set("Content-Type", "application/octet-stream")
-	}
+	w.Header().Set("Content-Type", asset.contentType)
+	// Immutable for a given build: the assets change only when the binary does.
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	_, _ = w.Write(data)
 }
