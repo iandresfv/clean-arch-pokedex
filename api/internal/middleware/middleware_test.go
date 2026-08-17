@@ -29,7 +29,7 @@ func TestRecoveryReturnsProblemJSON(t *testing.T) {
 	// The test itself must not die with the handler: an unrecovered panic in a
 	// goroutine terminates the whole process, which is exactly what Recovery
 	// exists to prevent.
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/pokemon", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/pokemon", nil))
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusInternalServerError)
@@ -63,7 +63,7 @@ func TestRecoveryRepanicsOnAbortHandler(t *testing.T) {
 	}()
 
 	h := Recovery()(aborting)
-	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 }
 
 func TestRequestIDGeneratedAndEchoed(t *testing.T) {
@@ -73,7 +73,7 @@ func TestRequestIDGeneratedAndEchoed(t *testing.T) {
 	}))
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 
 	if seen == "" {
 		t.Fatal("no request id placed in the context")
@@ -108,7 +108,7 @@ func TestRequestIDHonoursInboundHeader(t *testing.T) {
 				seen = reqctx.RequestID(r.Context())
 			}))
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 			if tt.inbound != "" {
 				req.Header.Set(RequestIDHeader, tt.inbound)
 			}
@@ -158,7 +158,7 @@ func TestCORS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, "/api/v1/pokemon", nil)
+			req := httptest.NewRequestWithContext(t.Context(), tt.method, "/api/v1/pokemon", nil)
 			req.Header.Set("Origin", tt.origin)
 			if tt.preflight {
 				req.Header.Set("Access-Control-Request-Method", "GET")
@@ -195,7 +195,7 @@ func TestCORSHeadersPresentOnErrorResponses(t *testing.T) {
 		CORS(cfg),
 	)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/pokemon", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/pokemon", nil)
 	req.Header.Set("Origin", "http://localhost:5173")
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -223,7 +223,7 @@ func TestChainAppliesOutermostFirst(t *testing.T) {
 		order = append(order, "handler")
 	}), mark("first"), mark("second"), mark("third"))
 
-	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/", nil))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 
 	want := []string{"first", "second", "third", "handler"}
 	if strings.Join(order, ",") != strings.Join(want, ",") {
@@ -238,7 +238,7 @@ func TestLoggingRecordsStatus(t *testing.T) {
 	}), RequestID(discardLogger()), Logging())
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/pokemon", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/pokemon", nil))
 
 	if rec.Code != http.StatusTeapot {
 		t.Errorf("status = %d, want %d; the recorder must not alter it", rec.Code, http.StatusTeapot)
@@ -256,7 +256,7 @@ func TestTimeoutReturnsProblemJSON(t *testing.T) {
 
 	h := Chain(slow, RequestID(discardLogger()), Timeout(20*time.Millisecond))
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/pokemon", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/pokemon", nil))
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusServiceUnavailable)
