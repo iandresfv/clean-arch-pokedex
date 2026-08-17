@@ -6,15 +6,27 @@
 // a renaming layer in the client adapter that buys nothing.
 package model
 
-// PokemonListItem is the projection returned by list and search endpoints. It
-// deliberately omits stats and the full sprite set: a 20-item page carrying
-// every field would be an order of magnitude larger for data the list view
-// never renders.
+// PokemonListItem is an entry in a list or search response.
+//
+// It carries every field of a full Pokemon except its species, which is
+// deliberate rather than wasteful: the client's repository port returns domain
+// entities, and a domain Pokemon cannot be constructed without its stats,
+// measurements and order. A slimmer shape would force the client to fetch each
+// row's detail separately — the N+1 pattern this API exists to remove.
+//
+// SpriteURL mirrors the best available artwork, matching the client's
+// Sprites.getBestQuality so both data sources render identically.
 type PokemonListItem struct {
-	ID        int32    `json:"id"`
-	Name      string   `json:"name"`
-	Types     []string `json:"types"`
-	SpriteURL *string  `json:"spriteUrl"`
+	ID             int32    `json:"id"`
+	Name           string   `json:"name"`
+	PokedexOrder   int32    `json:"pokedexOrder"`
+	Types          []string `json:"types"`
+	Stats          Stats    `json:"stats"`
+	HeightDm       int32    `json:"heightDm"`
+	WeightHg       int32    `json:"weightHg"`
+	BaseExperience *int32   `json:"baseExperience"`
+	Sprites        Sprites  `json:"sprites"`
+	SpriteURL      *string  `json:"spriteUrl"`
 }
 
 // Stats holds the six base stats. They are a fixed set defined by the games,
@@ -48,6 +60,7 @@ type Sprites struct {
 type Pokemon struct {
 	ID             int32    `json:"id"`
 	Name           string   `json:"name"`
+	PokedexOrder   int32    `json:"pokedexOrder"`
 	Types          []string `json:"types"`
 	Stats          Stats    `json:"stats"`
 	HeightDm       int32    `json:"heightDm"`

@@ -11,6 +11,9 @@
   "exclude": ["src/main.tsx"],
   "compilerOptions": {
     "composite": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    // vite/client must be repeated here: "types" replaces the inherited list
+    // rather than extending it, and without it import.meta.env is untyped in
+    // every file this project compiles.
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   }
 }

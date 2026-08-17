@@ -195,7 +195,19 @@ SELECT
     p.id,
     p.name,
     p.pokedex_order,
+    p.base_experience,
+    p.height_dm,
+    p.weight_hg,
+    p.stat_hp,
+    p.stat_attack,
+    p.stat_defense,
+    p.stat_special_attack,
+    p.stat_special_defense,
+    p.stat_speed,
     p.sprite_front_default,
+    p.sprite_front_shiny,
+    p.sprite_back_default,
+    p.sprite_back_shiny,
     p.sprite_official_artwork,
     COALESCE((
         SELECT array_agg(t.name ORDER BY pt.slot)
@@ -217,11 +229,32 @@ type ListPokemonRow struct {
 	ID                    int32
 	Name                  string
 	PokedexOrder          int32
+	BaseExperience        *int32
+	HeightDm              int32
+	WeightHg              int32
+	StatHp                int16
+	StatAttack            int16
+	StatDefense           int16
+	StatSpecialAttack     int16
+	StatSpecialDefense    int16
+	StatSpeed             int16
 	SpriteFrontDefault    *string
+	SpriteFrontShiny      *string
+	SpriteBackDefault     *string
+	SpriteBackShiny       *string
 	SpriteOfficialArtwork *string
 	TypeNames             []string
 }
 
+// List queries return the complete row, not a slim projection.
+//
+// The client's PokemonRepository port returns domain entities, and a domain
+// Pokemon cannot be constructed without its stats, measurements and order. A
+// lighter projection would force the client to fetch each row's detail
+// separately, reintroducing exactly the N+1 this API exists to remove. One page
+// costs roughly 30 kB instead of 8 kB, in exchange for one request instead of
+// twenty-one.
+//
 // Types are aggregated in SQL with array_agg so that one Pokemon is always one
 // row. A plain join to pokemon_type multiplies rows (a dual-type Pokemon
 // returns two), forcing the caller to collapse duplicates and shipping a second
@@ -242,7 +275,19 @@ func (q *Queries) ListPokemon(ctx context.Context, arg ListPokemonParams) ([]Lis
 			&i.ID,
 			&i.Name,
 			&i.PokedexOrder,
+			&i.BaseExperience,
+			&i.HeightDm,
+			&i.WeightHg,
+			&i.StatHp,
+			&i.StatAttack,
+			&i.StatDefense,
+			&i.StatSpecialAttack,
+			&i.StatSpecialDefense,
+			&i.StatSpeed,
 			&i.SpriteFrontDefault,
+			&i.SpriteFrontShiny,
+			&i.SpriteBackDefault,
+			&i.SpriteBackShiny,
 			&i.SpriteOfficialArtwork,
 			&i.TypeNames,
 		); err != nil {
@@ -261,7 +306,19 @@ SELECT
     p.id,
     p.name,
     p.pokedex_order,
+    p.base_experience,
+    p.height_dm,
+    p.weight_hg,
+    p.stat_hp,
+    p.stat_attack,
+    p.stat_defense,
+    p.stat_special_attack,
+    p.stat_special_defense,
+    p.stat_speed,
     p.sprite_front_default,
+    p.sprite_front_shiny,
+    p.sprite_back_default,
+    p.sprite_back_shiny,
     p.sprite_official_artwork,
     COALESCE((
         SELECT array_agg(t2.name ORDER BY pt2.slot)
@@ -287,7 +344,19 @@ type ListPokemonByTypeRow struct {
 	ID                    int32
 	Name                  string
 	PokedexOrder          int32
+	BaseExperience        *int32
+	HeightDm              int32
+	WeightHg              int32
+	StatHp                int16
+	StatAttack            int16
+	StatDefense           int16
+	StatSpecialAttack     int16
+	StatSpecialDefense    int16
+	StatSpeed             int16
 	SpriteFrontDefault    *string
+	SpriteFrontShiny      *string
+	SpriteBackDefault     *string
+	SpriteBackShiny       *string
 	SpriteOfficialArtwork *string
 	TypeNames             []string
 }
@@ -305,7 +374,19 @@ func (q *Queries) ListPokemonByType(ctx context.Context, arg ListPokemonByTypePa
 			&i.ID,
 			&i.Name,
 			&i.PokedexOrder,
+			&i.BaseExperience,
+			&i.HeightDm,
+			&i.WeightHg,
+			&i.StatHp,
+			&i.StatAttack,
+			&i.StatDefense,
+			&i.StatSpecialAttack,
+			&i.StatSpecialDefense,
+			&i.StatSpeed,
 			&i.SpriteFrontDefault,
+			&i.SpriteFrontShiny,
+			&i.SpriteBackDefault,
+			&i.SpriteBackShiny,
 			&i.SpriteOfficialArtwork,
 			&i.TypeNames,
 		); err != nil {
@@ -324,7 +405,19 @@ SELECT
     p.id,
     p.name,
     p.pokedex_order,
+    p.base_experience,
+    p.height_dm,
+    p.weight_hg,
+    p.stat_hp,
+    p.stat_attack,
+    p.stat_defense,
+    p.stat_special_attack,
+    p.stat_special_defense,
+    p.stat_speed,
     p.sprite_front_default,
+    p.sprite_front_shiny,
+    p.sprite_back_default,
+    p.sprite_back_shiny,
     p.sprite_official_artwork,
     COALESCE((
         SELECT array_agg(t.name ORDER BY pt.slot)
@@ -348,7 +441,19 @@ type SearchPokemonByNameRow struct {
 	ID                    int32
 	Name                  string
 	PokedexOrder          int32
+	BaseExperience        *int32
+	HeightDm              int32
+	WeightHg              int32
+	StatHp                int16
+	StatAttack            int16
+	StatDefense           int16
+	StatSpecialAttack     int16
+	StatSpecialDefense    int16
+	StatSpeed             int16
 	SpriteFrontDefault    *string
+	SpriteFrontShiny      *string
+	SpriteBackDefault     *string
+	SpriteBackShiny       *string
 	SpriteOfficialArtwork *string
 	TypeNames             []string
 }
@@ -369,7 +474,19 @@ func (q *Queries) SearchPokemonByName(ctx context.Context, arg SearchPokemonByNa
 			&i.ID,
 			&i.Name,
 			&i.PokedexOrder,
+			&i.BaseExperience,
+			&i.HeightDm,
+			&i.WeightHg,
+			&i.StatHp,
+			&i.StatAttack,
+			&i.StatDefense,
+			&i.StatSpecialAttack,
+			&i.StatSpecialDefense,
+			&i.StatSpeed,
 			&i.SpriteFrontDefault,
+			&i.SpriteFrontShiny,
+			&i.SpriteBackDefault,
+			&i.SpriteBackShiny,
 			&i.SpriteOfficialArtwork,
 			&i.TypeNames,
 		); err != nil {
