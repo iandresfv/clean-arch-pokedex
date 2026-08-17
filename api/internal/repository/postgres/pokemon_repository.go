@@ -45,12 +45,7 @@ func (r *PokemonRepository) List(ctx context.Context, limit, offset int32) ([]mo
 
 	items := make([]model.PokemonListItem, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, model.PokemonListItem{
-			ID:        row.ID,
-			Name:      row.Name,
-			Types:     row.TypeNames,
-			SpriteURL: preferredSprite(row.SpriteOfficialArtwork, row.SpriteFrontDefault),
-		})
+		items = append(items, listItemFromList(row))
 	}
 	return items, nil
 }
@@ -68,12 +63,7 @@ func (r *PokemonRepository) SearchByName(ctx context.Context, term string, limit
 
 	items := make([]model.PokemonListItem, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, model.PokemonListItem{
-			ID:        row.ID,
-			Name:      row.Name,
-			Types:     row.TypeNames,
-			SpriteURL: preferredSprite(row.SpriteOfficialArtwork, row.SpriteFrontDefault),
-		})
+		items = append(items, listItemFromSearch(row))
 	}
 	return items, nil
 }
@@ -91,12 +81,7 @@ func (r *PokemonRepository) ListByType(ctx context.Context, typeName string, lim
 
 	items := make([]model.PokemonListItem, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, model.PokemonListItem{
-			ID:        row.ID,
-			Name:      row.Name,
-			Types:     row.TypeNames,
-			SpriteURL: preferredSprite(row.SpriteOfficialArtwork, row.SpriteFrontDefault),
-		})
+		items = append(items, listItemFromType(row))
 	}
 	return items, nil
 }
@@ -117,6 +102,7 @@ func (r *PokemonRepository) GetByID(ctx context.Context, id int32) (model.Pokemo
 	return model.Pokemon{
 		ID:             row.ID,
 		Name:           row.Name,
+		PokedexOrder:   row.PokedexOrder,
 		Types:          row.TypeNames,
 		HeightDm:       row.HeightDm,
 		WeightHg:       row.WeightHg,
@@ -214,6 +200,40 @@ func (r *PokemonRepository) DatasetVersion(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("reading dataset version: %w", err)
 	}
 	return v, nil
+}
+
+// The three list queries produce structurally identical rows, but Go has no
+// structural typing for structs and generics cannot reach a type parameter's
+// fields, so each gets an explicit converter. Mechanical repetition at a
+// mapping boundary is cheaper to read than the reflection that would remove it.
+
+func listItemFromList(row ListPokemonRow) model.PokemonListItem {
+	return model.PokemonListItem{
+		ID: row.ID, Name: row.Name, PokedexOrder: row.PokedexOrder,
+		Types:          row.TypeNames,
+		HeightDm:       row.HeightDm,
+		WeightHg:       row.WeightHg,
+		BaseExperience: row.BaseExperience,
+		Stats: model.Stats{
+			HP: row.StatHp, Attack: row.StatAttack, Defense: row.StatDefense,
+			SpecialAttack: row.StatSpecialAttack, SpecialDefense: row.StatSpecialDefense,
+			Speed: row.StatSpeed,
+		},
+		Sprites: model.Sprites{
+			FrontDefault: row.SpriteFrontDefault, FrontShiny: row.SpriteFrontShiny,
+			BackDefault: row.SpriteBackDefault, BackShiny: row.SpriteBackShiny,
+			OfficialArtwork: row.SpriteOfficialArtwork,
+		},
+		SpriteURL: preferredSprite(row.SpriteOfficialArtwork, row.SpriteFrontDefault),
+	}
+}
+
+func listItemFromSearch(row SearchPokemonByNameRow) model.PokemonListItem {
+	return listItemFromList(ListPokemonRow(row))
+}
+
+func listItemFromType(row ListPokemonByTypeRow) model.PokemonListItem {
+	return listItemFromList(ListPokemonRow(row))
 }
 
 // preferredSprite picks the highest-quality artwork available, mirroring the
