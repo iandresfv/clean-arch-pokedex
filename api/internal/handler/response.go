@@ -8,29 +8,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/httperr"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/model"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/reqctx"
 )
-
-// ProblemContentType is the media type defined by RFC 9457 for error bodies.
-const ProblemContentType = "application/problem+json"
-
-// problemBaseURI namespaces the machine-readable error identifiers.
-const problemBaseURI = "https://github.com/iandresfv/clean-arch-pokedex/errors/"
-
-// Problem is an RFC 9457 error object.
-//
-// A documented, standard envelope beats an ad-hoc {"error": "..."} shape that
-// every client has to learn: Type is a stable identifier a client can branch
-// on, while Detail is human-facing prose that may change freely.
-type Problem struct {
-	Type      string `json:"type"`
-	Title     string `json:"title"`
-	Status    int    `json:"status"`
-	Detail    string `json:"detail,omitempty"`
-	Instance  string `json:"instance,omitempty"`
-	RequestID string `json:"requestId,omitempty"`
-}
 
 // writeJSON serialises v as the response body.
 //
@@ -55,26 +36,9 @@ func writeJSON(w http.ResponseWriter, r *http.Request, status int, v any) {
 	}
 }
 
-// writeProblem emits an RFC 9457 error body.
+// writeProblem emits an RFC 9457 error body through the shared envelope.
 func writeProblem(w http.ResponseWriter, r *http.Request, status int, title, detail string) {
-	p := Problem{
-		Type:      problemBaseURI + slugForStatus(status),
-		Title:     title,
-		Status:    status,
-		Detail:    detail,
-		Instance:  r.URL.Path,
-		RequestID: reqctx.RequestID(r.Context()),
-	}
-
-	body, err := json.Marshal(p)
-	if err != nil {
-		http.Error(w, title, status)
-		return
-	}
-
-	w.Header().Set("Content-Type", ProblemContentType)
-	w.WriteHeader(status)
-	_, _ = w.Write(body)
+	httperr.Write(w, r, status, title, detail)
 }
 
 // handleServiceError maps a domain error onto an HTTP response.
@@ -118,22 +82,5 @@ func handleServiceError(w http.ResponseWriter, r *http.Request, err error) {
 		log.Error("unhandled service error", "error", err)
 		writeProblem(w, r, http.StatusInternalServerError, "Internal Server Error",
 			"an unexpected error occurred")
-	}
-}
-
-// slugForStatus turns a status code into the stable identifier used in the
-// problem type URI.
-func slugForStatus(status int) string {
-	switch status {
-	case http.StatusBadRequest:
-		return "bad-request"
-	case http.StatusNotFound:
-		return "not-found"
-	case http.StatusTooManyRequests:
-		return "rate-limited"
-	case http.StatusServiceUnavailable:
-		return "unavailable"
-	default:
-		return "internal"
 	}
 }
