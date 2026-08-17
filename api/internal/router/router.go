@@ -12,6 +12,7 @@ type Handlers struct {
 	Pokemon *handler.PokemonHandler
 	Type    *handler.TypeHandler
 	Health  *handler.HealthHandler
+	Docs    *handler.DocsHandler
 }
 
 // New registers every route and returns the mux.
@@ -39,6 +40,15 @@ func New(h Handlers) *http.ServeMux {
 
 	mux.HandleFunc("GET /api/v1/types", h.Type.List)
 	mux.HandleFunc("GET /api/v1/types/{name}/matchups", h.Type.GetMatchups)
+
+	// Documentation is unversioned: it describes every version the binary
+	// serves. Registered last so the more specific API patterns take priority.
+	if h.Docs != nil {
+		mux.HandleFunc("GET /docs", h.Docs.UI)
+		mux.HandleFunc("GET /docs/{$}", h.Docs.UI)
+		mux.HandleFunc("GET /docs/openapi.yaml", h.Docs.Spec)
+		mux.HandleFunc("GET /docs/{asset}", h.Docs.Assets)
+	}
 
 	return mux
 }

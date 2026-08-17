@@ -93,10 +93,19 @@ func run() error {
 	limiterStore := middleware.NewMemoryRateLimitStore(cfg.RateLimit.RequestsPerMin, cfg.RateLimit.Burst)
 	go limiterStore.Cleanup(ctx, time.Minute)
 
+	// A failure here means the binary was built without its embedded assets,
+	// which is a build fault rather than a runtime one: the API still serves,
+	// only the reference is unavailable.
+	docsHandler, err := handler.NewDocsHandler()
+	if err != nil {
+		logger.Warn("API reference unavailable", "error", err)
+	}
+
 	mux := router.New(router.Handlers{
 		Pokemon: handler.NewPokemonHandler(pokemonSvc),
 		Type:    handler.NewTypeHandler(typeSvc),
 		Health:  handler.NewHealthHandler(pokemonRepo, version),
+		Docs:    docsHandler,
 	})
 
 	// Order is outermost first, and every position is deliberate:
