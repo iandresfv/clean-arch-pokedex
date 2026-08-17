@@ -9,6 +9,135 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.11.0] - 2026-08-17
+
+### Added
+- Redis-backed rate limiter using an atomic Lua token bucket, so the configured
+  limit holds across replicas instead of multiplying by the replica count.
+- Redis service in both the Compose and Kubernetes stacks, with LRU eviction and
+  no persistence: the state is rate-limiting counters with a 10-minute TTL.
+- Load-test script documenting the measured behaviour — 3 replicas admitted 24
+  requests against a limit of 10 before the fix, and exactly 10 after.
+
+## [2.10.0] - 2026-08-17
+
+### Added
+- Kubernetes manifests: Deployment with liveness, readiness and startup probes,
+  PostgreSQL StatefulSet, migration Job, ConfigMap and Secret.
+- `preStop` sleep and a 30s termination grace period so rolling deployments drop
+  no in-flight requests.
+- `GOMEMLIMIT` and `GOMAXPROCS` derived from the container's own resource limits.
+- Kustomize overlays for development and production, plus HorizontalPodAutoscaler
+  and PodDisruptionBudget.
+- Tiltfile with `live_update`, which syncs a rebuilt binary into the running pod
+  instead of rebuilding the image.
+
+## [2.9.0] - 2026-08-17
+
+### Added
+- Hand-written OpenAPI 3.1 specification for every endpoint.
+- Swagger UI served from assets embedded in the binary — no CDN, works offline.
+- Test asserting every served route is documented and every documented route is
+  served.
+
+## [2.8.0] - 2026-08-17
+
+### Added
+- Security headers middleware (CSP, HSTS when TLS is on, nosniff, frame denial).
+- HTTP caching with weak `ETag` and `Cache-Control`; a conditional request
+  returns `304` with an empty body.
+- IP-based rate limiting with trusted-proxy resolution of `X-Forwarded-For`.
+- Optional TLS, which also enables HTTP/2 through ALPN negotiation.
+- `tlscert` command for generating development certificates.
+
+## [2.7.0] - 2026-08-17
+
+### Added
+- Multi-stage Dockerfile producing a 22.9 MB distroless image running as
+  non-root with a read-only root filesystem.
+- `-health` and `-version` flags so the shell-less image can still be probed.
+- Development Dockerfile with Air hot reload, and a full Compose stack that runs
+  migrations to completion before starting the API.
+
+## [2.6.0] - 2026-08-17
+
+### Added
+- `PokedexAPIRepository`, a second adapter implementing the existing
+  `PokemonRepository` port.
+- `VITE_DATA_SOURCE` selects the adapter at the composition root; both remain
+  available.
+- HTTP client with timeouts and RFC 9457 error decoding.
+
+### Changed
+- The client now reads from this project's Go API by default. Listing a page
+  costs one request instead of twenty-one; search is one request instead of
+  downloading all 1302 names.
+- API list responses carry complete entities, because the client's port returns
+  domain entities and a slimmer shape would reintroduce the N+1.
+
+### Notes
+- All 203 client tests passed without modification, and no file in the domain,
+  application or presentation layers changed.
+
+## [2.5.0] - 2026-08-17
+
+### Added
+- Service and model unit tests, handler tests with `httptest`, and repository
+  integration tests against a real PostgreSQL.
+- Query plan regression tests parsing `EXPLAIN ANALYZE` output.
+
+## [2.4.0] - 2026-08-17
+
+### Added
+- CLI seeder with bounded concurrency, exponential backoff honouring
+  `Retry-After`, and a single all-or-nothing transaction.
+- `ANALYZE` after bulk loading, without which the planner still believes the
+  table is empty.
+- Test asserting the seeded type chart matches the client's domain service.
+
+## [2.3.0] - 2026-08-17
+
+### Added
+- Middleware: panic recovery, request ID with a context-scoped logger,
+  structured request logging, CORS, and per-request timeouts.
+- Shared RFC 9457 error envelope so every layer reports failures identically.
+
+### Notes
+- CORS sits outside the error paths so a 500 or 429 still carries
+  `Access-Control-Allow-Origin`; without that the browser masks the real error.
+
+## [2.2.0] - 2026-08-17
+
+### Added
+- Domain models, sentinel errors and validated pagination.
+- Service layer holding all business validation.
+- HTTP handlers and flat route registration on a single `ServeMux`.
+- Strict query parameter validation: unknown parameters are rejected rather than
+  ignored.
+
+## [2.1.0] - 2026-08-17
+
+### Added
+- PostgreSQL 18 via Docker Compose, mounting the version-specific `PGDATA` path.
+- Migrations for the catalogue schema, the 18 types and the 324-entry
+  effectiveness matrix.
+- GIN trigram index for substring search, plus the foreign-key indexes
+  PostgreSQL does not create on its own.
+- sqlc-generated queries and a pgx connection pool with startup backoff.
+- Repository layer translating driver errors into domain errors.
+
+## [2.0.0] - 2026-08-17
+
+### Added
+- Go 1.26 API skeleton: configuration with full validation, HTTP server with
+  graceful shutdown, Makefile, golangci-lint configuration and CI workflow.
+
+### Notes
+- Configuration reports every problem at once rather than one per restart, and
+  production requires credentials that development defaults.
+
+---
+
 ## [1.0.0] - 2026-02-14
 
 ### Added
