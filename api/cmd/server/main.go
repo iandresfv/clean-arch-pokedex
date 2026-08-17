@@ -16,6 +16,7 @@ import (
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/config"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/handler"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/middleware"
+	"github.com/iandresfv/clean-arch-pokedex/api/internal/redisstore"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/repository/postgres"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/router"
 	"github.com/iandresfv/clean-arch-pokedex/api/internal/service"
@@ -90,8 +91,27 @@ func run() error {
 	}
 	datasetVersion := middleware.NewDatasetVersion(initialVersion)
 
-	limiterStore := middleware.NewMemoryRateLimitStore(cfg.RateLimit.RequestsPerMin, cfg.RateLimit.Burst)
-	go limiterStore.Cleanup(ctx, time.Minute)
+	// The limiter's state must be shared once there is more than one replica:
+	// each process keeps its own counters, so N pods admit roughly N times the
+	// configured allowance. Redis is opt-in because a single instance does not
+	// need it, and a dependency that buys nothing is a dependency to avoid.
+	var limiterStore middleware.RateLimitStore
+	if cfg.Redis.Enabled {
+		redisClient, redisErr := redisstore.New(ctx, cfg.Redis, logger)
+		if redisErr != nil {
+			return redisErr
+		}
+		defer func() { _ = redisClient.Close() }()
+
+		limiterStore = redisstore.NewRateLimiter(
+			redisClient, cfg.RateLimit.RequestsPerMin, cfg.RateLimit.Burst, logger)
+		logger.Info("rate limiting backed by redis; the limit holds across replicas")
+	} else {
+		memStore := middleware.NewMemoryRateLimitStore(cfg.RateLimit.RequestsPerMin, cfg.RateLimit.Burst)
+		go memStore.Cleanup(ctx, time.Minute)
+		limiterStore = memStore
+		logger.Info("rate limiting is in-process; correct for a single instance only")
+	}
 
 	// A failure here means the binary was built without its embedded assets,
 	// which is a build fault rather than a runtime one: the API still serves,
