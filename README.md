@@ -147,16 +147,15 @@ clean-arch-pokedex/
 │   │   ├── presentation/      # React UI
 │   │   └── di/                # Dependency injection
 │   └── tests/                 # Test suites
-├── api/                       # Backend API (Go 1.26)
-│   ├── cmd/server/            # Entry point
-│   ├── internal/              # Application code
-│   │   ├── handler/           # HTTP handlers
-│   │   ├── service/           # Business logic
-│   │   ├── repository/        # Data access (sqlc + PostgreSQL)
-│   │   ├── model/             # Domain types
-│   │   └── middleware/        # CORS, logging, auth
-│   └── migrations/            # Database migrations
-└── CLAUDE.md                  # AI assistant engineering standards
+└── api/                       # Backend API (Go 1.26)
+    ├── cmd/server/            # Entry point
+    ├── internal/              # Application code
+    │   ├── handler/           # HTTP handlers
+    │   ├── service/           # Business logic
+    │   ├── repository/        # Data access (sqlc + PostgreSQL)
+    │   ├── model/             # Domain types
+    │   └── middleware/        # CORS, logging, auth
+    └── migrations/            # Database migrations
 ```
 
 ## 🤖 AI-Assisted Development
@@ -168,11 +167,11 @@ This project uses a structured **AI-assisted development methodology** with diff
 | **`client/`** (Frontend) | 100% AI-assisted | Architecture and standards defined by the engineer; implementation executed by AI |
 | **`api/`** (Backend) | Hybrid | Engineer writes core business logic; AI assists with configuration, scaffolding, and boilerplate |
 
-Both approaches are guided by the same [`CLAUDE.md`](./CLAUDE.md) engineering standards — ensuring consistent quality regardless of who writes the code.
+Both approaches are guided by the same `CLAUDE.md` engineering standards — ensuring consistent quality regardless of who writes the code.
 
 ### The Approach
 
-The frontend was developed through collaboration with AI coding assistants (Claude Code), guided by a comprehensive [`CLAUDE.md`](./CLAUDE.md) file that defines:
+The frontend was developed through collaboration with AI coding assistants (Claude Code), guided by a comprehensive `CLAUDE.md` file that defines:
 
 - **Architectural constraints**: Clean Architecture layer boundaries, dependency direction enforcement
 - **Code quality standards**: SOLID principles, self-documenting code, minimal comments policy

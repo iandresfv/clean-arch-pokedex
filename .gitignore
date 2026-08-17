@@ -58,6 +58,8 @@ Thumbs.db
 .tmp/
 
 # AI assistant config files
+CLAUDE.md
+.claude/
 .cursorrules
 .cursor/
 .windsurf/
