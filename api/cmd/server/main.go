@@ -108,6 +108,8 @@ func serve(ctx context.Context, srv *http.Server, cfg *config.Config, logger *sl
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
 
+	// nolint:contextcheck // Detaching from ctx is the point: ctx is already
+	// cancelled by the signal, so inheriting it would abort the drain instantly.
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		// Deadline exceeded means requests were still in flight. Close forces
 		// the remaining connections shut so the process can exit.

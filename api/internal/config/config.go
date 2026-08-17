@@ -32,11 +32,15 @@ type Config struct {
 // which tighten several validation rules in validate.
 func (c *Config) IsProduction() bool { return c.Env == EnvProduction }
 
+// Recognised values for APP_ENV. Production tightens validation: credentials
+// lose their development defaults and loopback CORS origins are rejected.
 const (
 	EnvDevelopment = "development"
 	EnvProduction  = "production"
 )
 
+// Server holds HTTP listener settings. Every timeout is a defence against a
+// slow or hostile client holding a connection open indefinitely.
 type Server struct {
 	Host              string
 	Port              int
@@ -49,6 +53,9 @@ type Server struct {
 	MaxHeaderBytes    int
 }
 
+// Database holds PostgreSQL connection and pool settings. Pool sizing is a
+// deployment-wide concern: replicas * MaxConns must stay below the server's
+// max_connections, which defaults to 100.
 type Database struct {
 	Host             string
 	Port             int
@@ -64,17 +71,22 @@ type Database struct {
 	StatementTimeout time.Duration
 }
 
+// Log holds structured logging settings.
 type Log struct {
 	Level  slog.Level
 	Format string
 }
 
+// CORS holds cross-origin settings. Enforcement happens in the browser, so a
+// misconfiguration here is invisible to curl and fatal to the web client.
 type CORS struct {
 	AllowedOrigins   []string
 	AllowCredentials bool
 	MaxAge           time.Duration
 }
 
+// RateLimit holds throttling settings. TrustedProxies gates whether the
+// client-supplied X-Forwarded-For header is believed.
 type RateLimit struct {
 	Enabled        bool
 	RequestsPerMin int
@@ -82,12 +94,16 @@ type RateLimit struct {
 	TrustedProxies []string
 }
 
+// TLS holds certificate settings. Enabling TLS also enables HTTP/2 through
+// ALPN negotiation, with no additional configuration.
 type TLS struct {
 	Enabled  bool
 	CertPath string
 	KeyPath  string
 }
 
+// Redis holds the address of the shared state store used when running more
+// than one replica.
 type Redis struct {
 	Enabled  bool
 	Addr     string
@@ -95,6 +111,8 @@ type Redis struct {
 	DB       int
 }
 
+// Cache holds response cache settings. TTL bounds staleness; MaxEntries bounds
+// memory.
 type Cache struct {
 	Enabled    bool
 	TTL        time.Duration
